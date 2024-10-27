@@ -1,10 +1,9 @@
-# Full-stack Discord Clone
+# Full-stack Video-Calling and File-Sharing Project
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Description
 
-This repository contains the source code for a simple Discord clone built using the MERN stack. The application provides basic functionalities similar to Discord, allowing users to create channels, send messages, and engage in real-time communication with other users.
+This repository contains the source code for project built using the MERN stack. The application provides basic functionalities similar to Discord, allowing users to create channels, send messages, and engage in real-time communication with other users as well as share files like GitHub to specific users or to a channel.
 ## Table of Contents
 
 - [Installation](#installation)
@@ -43,7 +42,6 @@ npm start
 - Single and group chatting
 - Flexible and easy-to-use API endpoints
 - Scalable and well-documented codebase
+- File Sharing
+- Encrypted passwords
 
-## License
-
-This project is licensed under the MIT License.

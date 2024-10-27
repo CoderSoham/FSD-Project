@@ -1,0 +1,13 @@
+.video-call-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 100vh; /* Full viewport height */
+  }
+  
+  .local-video,
+  .remote-video {
+    width: 45%; /* Set the width of the video elements */
+    border: 2px solid black; /* Optional: Add border for better visibility */
+  }
+  

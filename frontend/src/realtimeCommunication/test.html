@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microphone Test</title>
+</head>
+<body>
+    <h1>Microphone Test</h1>
+    <button id="start">Start Microphone</button>
+    <audio id="audio" controls autoplay></audio>
+
+    <script>
+        const startButton = document.getElementById('start');
+        const audioElement = document.getElementById('audio');
+
+        startButton.addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioElement.srcObject = stream; // Play the audio stream in the <audio> element
+                console.log('Microphone accessed successfully');
+            } catch (error) {
+                console.error('Error accessing microphone', error);
+                alert('Could not start audio source. Please check your microphone settings.');
+            }
+        });
+    </script>
+</body>
+</html>

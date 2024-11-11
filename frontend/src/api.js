@@ -2,7 +2,7 @@ import axios from "axios";
 import { logout } from "./shared/utils/auth";
 
 const apiClient = axios.create({
-  baseURL: "http://localhost:5002/api", 
+  baseURL: "fsd-project-api.vercel.app/api", 
   timeout: 10000, 
 });
 

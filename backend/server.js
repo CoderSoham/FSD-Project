@@ -8,17 +8,20 @@ const socketServer = require("./socketServer");
 const authRoutes = require("./routes/authRoutes");
 const friendInvitationRoutes = require("./routes/friendInvitationRoutes");
 
-const PORT = process.env.PORT || process.env.API_PORT || 5002; 
+const PORT = process.env.PORT || process.env.API_PORT || 5002;
 
 const app = express();
-app.use(express.json());
-app.use(cors());
 
+app.use(cors({
+  origin: 'https://fsd-project-mu.vercel.app', 
+  credentials: true, 
+}));
+
+app.use(express.json());
 
 app.get('/', (req, res) => {
   res.send('Server is running!');
 });
-
 
 app.use("/api/auth", authRoutes);
 app.use("/api/friend-invitation", friendInvitationRoutes);
@@ -29,7 +32,7 @@ socketServer.registerSocketServer(server);
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
-    server.listen(PORT, '127.0.0.1', () => {  
+    server.listen(PORT, '127.0.0.1', () => {
       console.log(`Server is listening on ${PORT}`);
     });
   })
@@ -37,5 +40,3 @@ mongoose
     console.log("Database connection failed. Server not started");
     console.error(err);
   });
-
-  app.use(cors()); 

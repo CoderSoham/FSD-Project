@@ -13,8 +13,8 @@ const PORT = process.env.PORT || process.env.API_PORT || 5002;
 const app = express();
 
 app.use(cors({
-  origin: 'https://fsd-project-mu.vercel.app', 
-  credentials: true, 
+  origin: 'https://fsd-project-mu.vercel.app',
+  credentials: true,
 }));
 
 app.use(express.json());
@@ -40,3 +40,7 @@ mongoose
     console.log("Database connection failed. Server not started");
     console.error(err);
   });
+
+module.exports = (req, res) => {
+  app(req, res); 
+};

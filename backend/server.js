@@ -14,14 +14,11 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-app.post('/api/auth/login', (req, res) => {
-  // Login logic
-  res.send('Login endpoint hit');
+
+app.get('/', (req, res) => {
+  res.send('Server is running!');
 });
 
-app.listen(process.env.API_PORT || 5000, () => {
-  console.log('Server is running');
-});
 
 app.use("/api/auth", authRoutes);
 app.use("/api/friend-invitation", friendInvitationRoutes);

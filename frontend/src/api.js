@@ -2,8 +2,10 @@ import axios from "axios";
 import { logout } from "./shared/utils/auth";
 
 const apiClient = axios.create({
-  baseURL: "fsd-project-api.vercel.app/api", 
-  timeout: 10000, 
+  baseURL: process.env.NODE_ENV === 'production' 
+    ? "https://fsd-project-api.vercel.app/api" 
+    : "http://localhost:5002/api", 
+  timeout: 10000,
 });
 
 apiClient.interceptors.request.use(

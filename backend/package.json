@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "node tests/codeCollab.convergence.test.js",
+    "test": "node tests/codeCollab.convergence.test.js && node tests/merge.test.js",
     "start": "nodemon server.js"
   },
   "author": "",
@@ -21,6 +21,7 @@
     "mongodb": "^6.10.0",
     "mongoose": "^6.0.10",
     "multer": "^2.0.1",
+    "node-diff3": "^3.2.1",
     "nodemon": "^2.0.13",
     "socket.io": "^4.4.1",
     "uuid": "^8.3.2",

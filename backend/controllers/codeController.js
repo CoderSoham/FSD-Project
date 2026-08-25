@@ -1,5 +1,7 @@
 const CodeVersion = require('../models/codeVersion');
 const resolveIdentity = require('../middleware/identity');
+const { threeWayMerge } = require('../utils/threeWayMerge');
+const { findCommonAncestor, tipOf } = require('../utils/versionGraph');
 
 // POST /api/code/save
 const saveCodeVersion = async (req, res) => {
@@ -69,23 +71,48 @@ const mergeBranches = async (req, res) => {
   if (!filename || !sourceBranch || !targetBranch) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
+  if (sourceBranch === targetBranch) {
+    return res.status(400).json({ error: 'Cannot merge a branch into itself' });
+  }
   const { userId, username } = await resolveIdentity(req);
-  // Get latest version from source branch
-  const sourceVersion = await CodeVersion.findOne({ filename, branch: sourceBranch }).sort({ timestamp: -1 });
+
+  const sourceVersion = await tipOf(filename, sourceBranch);
   if (!sourceVersion) return res.status(404).json({ error: 'Source branch not found' });
-  // Get latest version from target branch
-  const targetVersion = await CodeVersion.findOne({ filename, branch: targetBranch }).sort({ timestamp: -1 });
-  // Create a new version in target branch with source content
+  const targetVersion = await tipOf(filename, targetBranch);
+  if (!targetVersion) return res.status(404).json({ error: 'Target branch not found' });
+
+  // The version the two branches diverged from. Without it we could only
+  // overwrite one side with the other, which is what this used to do.
+  const baseId = await findCommonAncestor(targetVersion._id, sourceVersion._id);
+  const baseVersion = baseId ? await CodeVersion.findById(baseId) : null;
+
+  const { content, conflicted, conflictCount } = threeWayMerge(
+    baseVersion ? baseVersion.content : '',
+    targetVersion.content,
+    sourceVersion.content,
+    { ourLabel: targetBranch, theirLabel: sourceBranch }
+  );
+
   const mergedVersion = await CodeVersion.create({
     filename,
     language: sourceVersion.language,
-    content: sourceVersion.content,
+    content,
     userId,
     username,
-    parentVersionId: targetVersion ? targetVersion._id : null,
+    parentVersionId: targetVersion._id,
+    mergedFromVersionId: sourceVersion._id,
+    hasConflicts: conflicted,
+    conflictCount,
     branch: targetBranch,
   });
-  res.status(201).json(mergedVersion);
+
+  // 201 either way -- the merge version exists and is the thing to open. The
+  // flag tells the client whether a human still has to resolve it.
+  res.status(201).json({
+    ...mergedVersion.toObject(),
+    baseVersionId: baseId,
+    unrelatedHistories: !baseId,
+  });
 };
 
 module.exports = {

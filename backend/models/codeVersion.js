@@ -8,6 +8,11 @@ const codeVersionSchema = new mongoose.Schema({
   username: { type: String, required: true },
   timestamp: { type: Date, default: Date.now },
   parentVersionId: { type: mongoose.Schema.Types.ObjectId, ref: 'CodeVersion', default: null },
+  // A merge has two parents. Without this the graph cannot represent that a
+  // merge happened, which makes the history a lie and blocks a faithful export.
+  mergedFromVersionId: { type: mongoose.Schema.Types.ObjectId, ref: 'CodeVersion', default: null },
+  hasConflicts: { type: Boolean, default: false },
+  conflictCount: { type: Number, default: 0 },
   branch: { type: String, default: 'main' },
 });
 

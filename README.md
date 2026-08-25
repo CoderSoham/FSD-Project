@@ -34,7 +34,7 @@ file sharing inside a room.
 | **Call recording** | Records the room stream via RecordRTC and saves it to your machine as an `.mp4`. Entirely local — nothing is uploaded. |
 | **Collaborative editing** | A Monaco editor bound to a Yjs CRDT. Concurrent edits merge deterministically, edits made while disconnected reconcile on reconnect, and cursors are carried by awareness. |
 | **Document versions** | Every save creates a version carrying its parent, forming a history you can walk rather than a flat list of saves. |
-| **Branches and merges** | Branch a document from any version, work independently, and merge back. Useful when two authors take a section in different directions. |
+| **Branches and merges** | Branch from any version and merge back with a real three-way merge — the common ancestor is found by walking the version DAG, non-overlapping edits from both sides are kept, and overlapping ones become labelled conflict blocks rather than a silent winner. |
 | **Version diffs** | Any two versions rendered side by side via `react-diff-viewer`. |
 | **Inline comments** | Comments anchored to a position in a specific version, so review feedback stays attached to the text it refers to. |
 | **File sharing** | Upload files into a room; they appear in the room's file list alongside its messages. |
@@ -127,10 +127,6 @@ account — WebRTC needs two real peers.
 
 These are real and worth knowing before you judge the code:
 
-- **Merge takes the source branch wholesale.** `mergeBranches` creates a version
-  in the target carrying the source's content, parented to the target's tip. It
-  records the merge in the graph but does not reconcile competing edits, so it
-  is a fast-forward, not a three-way merge.
 - **Uploaded files are served from a public static path.** `/uploads` is
   `express.static` with unguessable-ish filenames but no access check, so anyone
   with a URL can fetch a research document. The upload route is authenticated;
@@ -145,8 +141,8 @@ These are real and worth knowing before you judge the code:
 - **Recording is client-side and unencrypted.** RecordRTC captures the local
   stream and `file-saver` writes it to disk. There is no consent prompt for the
   other participants.
-- **Thin test coverage.** `npm test` runs the collaborative-editing
-  convergence suite; nothing else is covered yet.
+- **Thin test coverage.** `npm test` covers collaborative-editing convergence
+  and the merge/DAG logic. The HTTP layer and sockets are untested.
 - **CORS is pinned to the deployed frontend origin** in `server.js`, so a local
   frontend talking to the deployed API will be rejected. Run both locally or
   both deployed.

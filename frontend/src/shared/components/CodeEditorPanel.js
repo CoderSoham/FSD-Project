@@ -6,6 +6,7 @@ import DiffViewer from "react-diff-viewer";
 import { saveCodeVersion, getCodeHistory, getCodeVersion, createBranch, getBranches, mergeBranches, addCodeComment, getCodeComments, deleteCodeComment } from '../../api';
 import { connectCollabSession } from '../utils/collabSession';
 import { Rnd } from 'react-rnd';
+import { notifySuccess, notifyError, notifyWarning } from '../utils/notification';
 
 // Use the bundled Monaco rather than the CDN copy @monaco-editor/react loads by
 // default. y-monaco imports monaco-editor directly, and two separate Monaco
@@ -141,6 +142,7 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
   const [showCommentBox, setShowCommentBox] = useState(false);
   const editorRef = useRef();
   const [editorReady, setEditorReady] = useState(false);
+  const [mergeResult, setMergeResult] = useState(null);
   const [panelSize, setPanelSize] = useState({ width: 0.7 * window.innerWidth, height: 0.7 * window.innerHeight });
   const [panelPos, setPanelPos] = useState({ x: window.innerWidth * 0.15, y: window.innerHeight * 0.15 });
 
@@ -248,18 +250,35 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
     }
   };
 
-  // Merge branches
+  // Merge branches.
+  // The server performs a real three-way merge against the version the two
+  // branches diverged from, so conflicts are possible and must be surfaced --
+  // silently accepting a merge that contains conflict markers would leave the
+  // document broken with no indication why.
   const handleMerge = async () => {
     if (!mergeSource || mergeSource === currentBranch) return;
+    // identity comes from the auth token server-side; sending it is pointless
     const res = await mergeBranches({
       filename,
       sourceBranch: mergeSource,
       targetBranch: currentBranch,
-      userId: user?._id || "anonymous",
-      username: user?.username || "anonymous"
     });
-    if (!res.error) {
-      fetchHistory();
+    if (res.error) {
+      notifyError(res.error);
+      return;
+    }
+    fetchHistory();
+    if (res.unrelatedHistories) {
+      notifyWarning("These branches share no history — every line was treated as new.");
+    }
+    if (res.hasConflicts) {
+      setMergeResult(res);
+      notifyWarning(
+        `Merged with ${res.conflictCount} conflict${res.conflictCount === 1 ? "" : "s"}. ` +
+        `Resolve the marked sections before saving.`
+      );
+    } else {
+      notifySuccess(`Merged ${mergeSource} into ${currentBranch}.`);
     }
   };
 
@@ -630,6 +649,28 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
                 />
               </div>
             ) : (
+              <>
+              {mergeResult?.hasConflicts && (
+                <div style={{
+                  background: '#4a1f1f', color: '#ffd7d7', padding: '8px 12px',
+                  fontSize: 13, borderBottom: '1px solid #7a2f2f',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+                }}>
+                  <span>
+                    <strong>{mergeResult.conflictCount}</strong>{' '}
+                    unresolved conflict{mergeResult.conflictCount === 1 ? '' : 's'} from
+                    merging <strong>{mergeSource}</strong>. Search for{' '}
+                    <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> and resolve each block before saving.
+                  </span>
+                  <button
+                    onClick={() => setMergeResult(null)}
+                    style={{ background: 'transparent', color: '#ffd7d7',
+                             border: '1px solid #7a2f2f', borderRadius: 4, cursor: 'pointer' }}
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              )}
               <MonacoEditor
                 height="100%"
                 language={language}
@@ -656,6 +697,7 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
                   },
                 }}
               />
+              </>
             )}
           </div>
         </div>

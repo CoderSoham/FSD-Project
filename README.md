@@ -1,8 +1,18 @@
-# FSD-Project — a real-time chat and video platform
+# FSD-Project — a collaboration workspace for research groups
 
-A Discord-style communication app: accounts, a friends graph built on
-invitations, one-to-one messaging with persisted history, and group video rooms
-built on WebRTC with screen sharing and local call recording.
+Discord-style communication with git-style document history. Built for
+academics and research groups who need to talk, screen-share and video-call
+while working on shared documents — and need a trustworthy record of who
+changed what.
+
+The communication half is a Discord-style app: accounts, a friends graph built
+on invitations, one-to-one messaging with persisted history, and group video
+rooms over WebRTC with screen sharing and call recording.
+
+The collaboration half is version control over the documents themselves:
+real-time collaborative editing, versions with parents and branches, diffs
+between any two versions, merges, inline comments anchored to a version, and
+file sharing inside a room.
 
 **Live:** https://fsd-project-mu.vercel.app · **API:** https://fsd-project-api.vercel.app
 
@@ -22,21 +32,33 @@ built on WebRTC with screen sharing and local call recording.
 | **Video rooms** | Create a room, others join. Peer-to-peer audio/video over WebRTC, with per-participant mic and camera toggles. |
 | **Screen share** | Swaps the outgoing video track on the live connection, so no renegotiation is needed. |
 | **Call recording** | Records the room stream via RecordRTC and saves it to your machine as an `.mp4`. Entirely local — nothing is uploaded. |
+| **Collaborative editing** | A Monaco editor shared over sockets, with live `codeChange` broadcast and cursor presence for everyone in the session. |
+| **Document versions** | Every save creates a version carrying its parent, forming a history you can walk rather than a flat list of saves. |
+| **Branches and merges** | Branch a document from any version, work independently, and merge back. Useful when two authors take a section in different directions. |
+| **Version diffs** | Any two versions rendered side by side via `react-diff-viewer`. |
+| **Inline comments** | Comments anchored to a position in a specific version, so review feedback stays attached to the text it refers to. |
+| **File sharing** | Upload files into a room; they appear in the room's file list alongside its messages. |
+
+> **Authorship comes from the JWT, never the request body.** A version can only
+> be attributed to the account that actually saved it. The history is the
+> product here — if it could be forged it would be worthless.
 
 ## How it fits together
 
 ```
-frontend (React 17 + Redux)          backend (Express + Socket.IO)
-  authPages/          login, register      routes/          REST: auth, invitations
-  Dashboard/                               controllers/     register, login, invite,
-    FriendsSideBar/   friends, invites                      accept, reject
-    Messenger/        direct chat          socketHandlers/  9 handlers (see below)
-    Room/             video grid, controls models/          user, message,
-  realtimeCommunication/                                    conversation, friendInvitation
-    socketConnection  socket lifecycle
-    webRTCHandler     simple-peer wrapper       MongoDB Atlas
+frontend (React 17 + Redux)            backend (Express + Socket.IO)
+  authPages/        login, register        routes/           auth, invitations,
+  Dashboard/                                                 code, files
+    FriendsSideBar/ friends, invites       controllers/      register, login, invite,
+    Messenger/      direct chat                              code, codeComment, file
+    Room/           video grid, chat       socketHandlers/   9 room handlers
+  shared/components/                                         + codeCollabHandler
+    CodeEditorPanel monaco + diffs         middleware/       auth, identity
+  realtimeCommunication/                   models/           user, message, conversation,
+    socketConnection  socket lifecycle                       friendInvitation, codeVersion,
+    webRTCHandler     simple-peer wrapper                    codeComment, vcFile, vcMessage
     roomHandler       room state
-  store/              5 slices, thunks
+  store/            5 slices, thunks              MongoDB Atlas
 ```
 
 **REST handles the things that need to be durable** — registration, login,
@@ -105,6 +127,19 @@ account — WebRTC needs two real peers.
 
 These are real and worth knowing before you judge the code:
 
+- **Collaborative editing is last-write-wins.** `codeCollabHandler` broadcasts
+  whole-document `codeChange` events and keeps session state in memory. Two
+  people typing in the same region will clobber each other, and a server restart
+  drops the live session. Proper concurrent editing needs CRDTs or OT — Yjs is
+  the obvious route.
+- **Merge takes the source branch wholesale.** `mergeBranches` creates a version
+  in the target carrying the source's content, parented to the target's tip. It
+  records the merge in the graph but does not reconcile competing edits, so it
+  is a fast-forward, not a three-way merge.
+- **Uploaded files are served from a public static path.** `/uploads` is
+  `express.static` with unguessable-ish filenames but no access check, so anyone
+  with a URL can fetch a research document. The upload route is authenticated;
+  the download path is not.
 - **STUN only, no TURN.** `webRTCHandler.js` configures Google's public STUN
   server and leaves the TURN branch as a TODO. Peers behind symmetric NAT or a
   restrictive corporate firewall will fail to connect. A production deployment

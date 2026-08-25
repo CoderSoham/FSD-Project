@@ -2,12 +2,12 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    height: 100vh; /* Full viewport height */
+    height: 100vh; 
   }
   
   .local-video,
   .remote-video {
-    width: 45%; /* Set the width of the video elements */
-    border: 2px solid black; /* Optional: Add border for better visibility */
+    width: 45%; 
+    border: 2px solid black; 
   }
   

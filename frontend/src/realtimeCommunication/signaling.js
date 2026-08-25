@@ -1,6 +1,6 @@
 import io from 'socket.io-client';
 
-const socket = io("http://10.20.25.129:5002"); // Your backend URL
+const socket = io("http://10.20.25.129:5002"); 
 
 export const initializePeerConnection = (localVideo, remoteVideo) => {
   const peerConnection = new RTCPeerConnection();
@@ -46,5 +46,4 @@ export const startCall = (peerConnection, userId) => {
 };
 
 export const answerCall = (peerConnection) => {
-  // Logic to answer a call (this can be extended as needed)
 };

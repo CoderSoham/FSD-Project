@@ -1,0 +1,25 @@
+# dependencies
+node_modules/
+*/node_modules/
+
+# environment — never commit real credentials
+.env
+.env.*
+!.env.example
+*/.env
+*/.env.*
+!*/.env.example
+
+# build output
+build/
+dist/
+.vercel/
+
+# logs
+*.log
+npm-debug.log*
+
+# editor / OS
+.DS_Store
+.vscode/
+.idea/

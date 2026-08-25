@@ -11,10 +11,9 @@ const friendInvitationRoutes = require("./routes/friendInvitationRoutes");
 const PORT = process.env.PORT || process.env.API_PORT || 5002;
 
 const app = express();
-
 app.use(cors({
-  origin: 'https://fsd-project-mu.vercel.app',
-  credentials: true,
+  origin: 'http://localhost:3000',
+  credentials: true, 
 }));
 
 app.use(express.json());
@@ -30,7 +29,10 @@ const server = http.createServer(app);
 socketServer.registerSocketServer(server);
 
 mongoose
-  .connect(process.env.MONGO_URI)
+  .connect(process.env.MONGO_URI || "mongodb://localhost:27017/your-database-name", {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then(() => {
     server.listen(PORT, '127.0.0.1', () => {
       console.log(`Server is listening on ${PORT}`);
@@ -42,5 +44,5 @@ mongoose
   });
 
 module.exports = (req, res) => {
-  app(req, res); 
+  app(req, res);
 };

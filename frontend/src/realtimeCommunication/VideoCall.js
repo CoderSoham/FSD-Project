@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { initializePeerConnection, startCall, answerCall } from "./signaling";
-import "./videoCall.css"; // Import your CSS for styling
+import "./videoCall.css";
 
 const VideoCall = ({ userId }) => {
   const localVideoRef = useRef(null);

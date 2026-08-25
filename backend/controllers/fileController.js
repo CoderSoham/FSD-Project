@@ -1,3 +1,4 @@
+const resolveIdentity = require('../middleware/identity');
 const path = require('path');
 const VCFile = require('../models/vcFile');
 const VCMessage = require('../models/vcMessage');
@@ -7,7 +8,8 @@ const uploadFile = async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
   }
-  const { roomId, userId, username } = req.body;
+  const { roomId } = req.body;
+  const { userId, username } = await resolveIdentity(req);
   const fileMeta = {
     roomId,
     userId,
@@ -58,8 +60,9 @@ const getRoomMessages = async (req, res) => {
 // POST /api/files/room/:roomId/messages
 const postRoomMessage = async (req, res) => {
   const { roomId } = req.params;
-  const { userId, username, content, type = 'text' } = req.body;
-  if (!roomId || !userId || !username || !content) {
+  const { content, type = 'text' } = req.body;
+  const { userId, username } = await resolveIdentity(req);
+  if (!roomId || !content) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
   const message = await VCMessage.create({

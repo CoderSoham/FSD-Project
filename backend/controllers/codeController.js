@@ -1,11 +1,15 @@
 const CodeVersion = require('../models/codeVersion');
+const resolveIdentity = require('../middleware/identity');
 
 // POST /api/code/save
 const saveCodeVersion = async (req, res) => {
-  const { filename, language, content, userId, username, parentVersionId } = req.body;
-  if (!filename || !language || !content || !userId || !username) {
+  const { filename, language, content, parentVersionId } = req.body;
+  if (!filename || !language || !content) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
+  // Authorship is taken from the verified token so a version can never be
+  // attributed to someone who did not write it.
+  const { userId, username } = await resolveIdentity(req);
   const version = await CodeVersion.create({
     filename,
     language,
@@ -61,10 +65,11 @@ const getBranches = async (req, res) => {
 
 // POST /api/code/merge
 const mergeBranches = async (req, res) => {
-  const { filename, sourceBranch, targetBranch, userId, username } = req.body;
-  if (!filename || !sourceBranch || !targetBranch || !userId || !username) {
+  const { filename, sourceBranch, targetBranch } = req.body;
+  if (!filename || !sourceBranch || !targetBranch) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
+  const { userId, username } = await resolveIdentity(req);
   // Get latest version from source branch
   const sourceVersion = await CodeVersion.findOne({ filename, branch: sourceBranch }).sort({ timestamp: -1 });
   if (!sourceVersion) return res.status(404).json({ error: 'Source branch not found' });

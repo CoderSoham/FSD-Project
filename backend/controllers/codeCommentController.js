@@ -1,9 +1,11 @@
+const resolveIdentity = require('../middleware/identity');
 const CodeComment = require('../models/codeComment');
 
 // POST /api/code/comments
 const addComment = async (req, res) => {
-  const { codeVersionId, filename, branch, userId, username, text, position } = req.body;
-  if (!codeVersionId || !filename || !branch || !userId || !username || !text || !position) {
+  const { codeVersionId, filename, branch, text, position } = req.body;
+  const { userId, username } = await resolveIdentity(req);
+  if (!codeVersionId || !filename || !branch || !text || !position) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
   const comment = await CodeComment.create({

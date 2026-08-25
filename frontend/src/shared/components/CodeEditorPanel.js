@@ -1,9 +1,17 @@
 import React, { useRef, useState, useEffect } from "react";
-import MonacoEditor from "@monaco-editor/react";
+import MonacoEditor, { loader } from "@monaco-editor/react";
+import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
+
 import DiffViewer from "react-diff-viewer";
 import { saveCodeVersion, getCodeHistory, getCodeVersion, createBranch, getBranches, mergeBranches, addCodeComment, getCodeComments, deleteCodeComment } from '../../api';
-import io from 'socket.io-client';
+import { connectCollabSession } from '../utils/collabSession';
 import { Rnd } from 'react-rnd';
+
+// Use the bundled Monaco rather than the CDN copy @monaco-editor/react loads by
+// default. y-monaco imports monaco-editor directly, and two separate Monaco
+// instances would mean the CRDT binding manipulating a different editor API
+// than the one on screen. It also means the editor works offline.
+loader.config({ monaco: monacoEditor });
 
 const LANGUAGES = [
   { label: "JavaScript", value: "javascript", ext: "js" },
@@ -132,6 +140,7 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
   const [commentPos, setCommentPos] = useState(null); // {startLine, startColumn, endLine, endColumn}
   const [showCommentBox, setShowCommentBox] = useState(false);
   const editorRef = useRef();
+  const [editorReady, setEditorReady] = useState(false);
   const [panelSize, setPanelSize] = useState({ width: 0.7 * window.innerWidth, height: 0.7 * window.innerHeight });
   const [panelPos, setPanelPos] = useState({ x: window.innerWidth * 0.15, y: window.innerHeight * 0.15 });
 
@@ -151,30 +160,18 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
     fetchComments();
   }, [filename, currentBranch, history]);
 
+  // Collaborative editing is bound to the Monaco model by Yjs, so there is no
+  // onChange plumbing here at all -- the CRDT owns the document text and the
+  // binding applies remote edits directly to the model.
   useEffect(() => {
-    if (!sessionId || !open) return;
-    const socket = io('http://localhost:5002');
-    socket.emit('joinCodeSession', { sessionId, user: user?.username || 'anonymous' });
-    socket.on('initCode', ({ code }) => {
-      if (onChange) onChange(code);
+    if (!sessionId || !open || !editorReady || !editorRef.current) return;
+    const teardown = connectCollabSession({
+      sessionId,
+      editor: editorRef.current,
+      user,
     });
-    socket.on('codeChange', ({ code }) => {
-      if (onChange) onChange(code);
-    });
-    // Broadcast code changes
-    const handleChange = (newValue) => {
-      if (onChange) onChange(newValue);
-      socket.emit('codeChange', { sessionId, code: newValue });
-    };
-    // Patch Monaco onChange
-    const origOnChange = onChange;
-    onChange = handleChange;
-    return () => {
-      socket.emit('leaveCodeSession', { sessionId });
-      socket.disconnect();
-      onChange = origOnChange;
-    };
-  }, [sessionId, open]);
+    return teardown;
+  }, [sessionId, open, editorReady, user]);
 
   const fetchHistory = async () => {
     setLoadingHistory(true);
@@ -337,6 +334,7 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
   // Monaco: handle selection for comment
   const handleEditorMount = (editor, monaco) => {
     editorRef.current = editor;
+    setEditorReady(true);
     editor.onMouseDown(e => {
       if (e.target.type === monaco.editor.MouseTargetType.CONTENT_TEXT) {
         const sel = editor.getSelection();

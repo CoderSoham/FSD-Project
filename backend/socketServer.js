@@ -26,7 +26,6 @@ const registerSocketServer = (server) => {
     authSocket(socket, next);
   });
 
-  codeCollabHandler(io);
 
   const emitOnlineUsers = () => {
     const onlineUsers = serverStore.getOnlineUsers();
@@ -38,6 +37,7 @@ const registerSocketServer = (server) => {
     console.log(socket.id);
 
     newConnectionHandler(socket, io);
+    codeCollabHandler(socket, io);
     emitOnlineUsers();
 
     // Signaling for WebRTC

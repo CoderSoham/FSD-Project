@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node tests/codeCollab.convergence.test.js",
     "start": "nodemon server.js"
   },
   "author": "",
@@ -17,11 +17,14 @@
     "express-joi-validation": "^5.0.0",
     "joi": "^17.4.2",
     "jsonwebtoken": "^8.5.1",
+    "lib0": "^0.2.117",
     "mongodb": "^6.10.0",
     "mongoose": "^6.0.10",
     "multer": "^2.0.1",
     "nodemon": "^2.0.13",
     "socket.io": "^4.4.1",
-    "uuid": "^8.3.2"
+    "uuid": "^8.3.2",
+    "y-protocols": "^1.0.7",
+    "yjs": "^13.6.32"
   }
 }

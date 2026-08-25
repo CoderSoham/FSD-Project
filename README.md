@@ -32,7 +32,7 @@ file sharing inside a room.
 | **Video rooms** | Create a room, others join. Peer-to-peer audio/video over WebRTC, with per-participant mic and camera toggles. |
 | **Screen share** | Swaps the outgoing video track on the live connection, so no renegotiation is needed. |
 | **Call recording** | Records the room stream via RecordRTC and saves it to your machine as an `.mp4`. Entirely local — nothing is uploaded. |
-| **Collaborative editing** | A Monaco editor shared over sockets, with live `codeChange` broadcast and cursor presence for everyone in the session. |
+| **Collaborative editing** | A Monaco editor bound to a Yjs CRDT. Concurrent edits merge deterministically, edits made while disconnected reconcile on reconnect, and cursors are carried by awareness. |
 | **Document versions** | Every save creates a version carrying its parent, forming a history you can walk rather than a flat list of saves. |
 | **Branches and merges** | Branch a document from any version, work independently, and merge back. Useful when two authors take a section in different directions. |
 | **Version diffs** | Any two versions rendered side by side via `react-diff-viewer`. |
@@ -86,9 +86,9 @@ directly between browsers.
 ## Tech
 
 **Frontend** — React 17, Redux Toolkit + thunk, React Router 5, MUI 5,
-socket.io-client, simple-peer, RecordRTC, axios
+socket.io-client, simple-peer, RecordRTC, axios, Monaco, Yjs + y-monaco
 **Backend** — Node, Express 4, Socket.IO 4, Mongoose 6, bcryptjs, jsonwebtoken,
-Joi via express-joi-validation
+Joi via express-joi-validation, Yjs
 **Data** — MongoDB Atlas · **Hosting** — Vercel (frontend and API deployed separately)
 
 ## Running it locally
@@ -127,11 +127,6 @@ account — WebRTC needs two real peers.
 
 These are real and worth knowing before you judge the code:
 
-- **Collaborative editing is last-write-wins.** `codeCollabHandler` broadcasts
-  whole-document `codeChange` events and keeps session state in memory. Two
-  people typing in the same region will clobber each other, and a server restart
-  drops the live session. Proper concurrent editing needs CRDTs or OT — Yjs is
-  the obvious route.
 - **Merge takes the source branch wholesale.** `mergeBranches` creates a version
   in the target carrying the source's content, parented to the target's tip. It
   records the merge in the graph but does not reconcile competing edits, so it
@@ -150,7 +145,8 @@ These are real and worth knowing before you judge the code:
 - **Recording is client-side and unencrypted.** RecordRTC captures the local
   stream and `file-saver` writes it to disk. There is no consent prompt for the
   other participants.
-- **No tests.** `npm test` in the backend is still the npm-init placeholder.
+- **Thin test coverage.** `npm test` runs the collaborative-editing
+  convergence suite; nothing else is covered yet.
 - **CORS is pinned to the deployed frontend origin** in `server.js`, so a local
   frontend talking to the deployed API will be rejected. Run both locally or
   both deployed.

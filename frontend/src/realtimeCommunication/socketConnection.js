@@ -74,6 +74,16 @@ export const connectWithSocketServer = (userDetails) => {
   });
 };
 
+/**
+ * The live, authenticated socket.
+ *
+ * Collaborative editing used to open its own `io('http://localhost:5002')`,
+ * which sent no auth token and pointed at localhost in production -- so it was
+ * rejected by authSocket and could never have worked once deployed. Everything
+ * shares this one connection instead.
+ */
+export const getSocket = () => socket;
+
 export const sendDirectMessage = (data) => {
   console.log(data);
   socket.emit("direct-message", data);

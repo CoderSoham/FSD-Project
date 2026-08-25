@@ -8,6 +8,7 @@ const roomJoinHandler = require("./socketHandlers/roomJoinHandler");
 const roomLeaveHandler = require("./socketHandlers/roomLeaveHandler");
 const roomInitializeConnectionHandler = require("./socketHandlers/roomInitializeConnectionHandler");
 const roomSignalingDataHandler = require("./socketHandlers/roomSignalingDataHandler");
+const codeCollabHandler = require("./socketHandlers/codeCollabHandler");
 
 const serverStore = require("./serverStore");
 
@@ -24,6 +25,8 @@ const registerSocketServer = (server) => {
   io.use((socket, next) => {
     authSocket(socket, next);
   });
+
+  codeCollabHandler(io);
 
   const emitOnlineUsers = () => {
     const onlineUsers = serverStore.getOnlineUsers();

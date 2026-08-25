@@ -23,3 +23,7 @@ npm-debug.log*
 .DS_Store
 .vscode/
 .idea/
+
+# user-uploaded files — research documents must never land in git
+backend/uploads/
+uploads/

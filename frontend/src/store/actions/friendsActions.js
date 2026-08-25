@@ -1,4 +1,4 @@
-import { openAlertMessage } from "./alertActions";
+import { notifyError, notifySuccess } from "../../shared/utils/notification";
 import * as api from "../../api";
 
 export const friendsActions = {
@@ -42,9 +42,9 @@ const sendFriendInvitation = (data, closeDialogHandler) => {
     const response = await api.sendFriendInvitation(data);
 
     if (response.error) {
-      dispatch(openAlertMessage(response.exception?.response?.data));
+      notifyError(response.exception?.response?.data || "Failed to send invitation");
     } else {
-      dispatch(openAlertMessage("Invitation has been sent!"));
+      notifySuccess("Invitation has been sent!");
       closeDialogHandler();
     }
   };
@@ -55,9 +55,9 @@ const acceptFriendInvitation = (data) => {
     const response = await api.acceptFriendInvitation(data);
 
     if (response.error) {
-      dispatch(openAlertMessage(response.exception?.response?.data));
+      notifyError(response.exception?.response?.data || "Failed to accept invitation");
     } else {
-      dispatch(openAlertMessage("Invitation accepted!"));
+      notifySuccess("Invitation accepted!");
     }
   };
 };
@@ -67,9 +67,9 @@ const rejectFriendInvitation = (data) => {
     const response = await api.rejectFriendInvitation(data);
 
     if (response.error) {
-      dispatch(openAlertMessage(response.exception?.response?.data));
+      notifyError(response.exception?.response?.data || "Failed to reject invitation");
     } else {
-      dispatch(openAlertMessage("Invitation rejected!"));
+      notifySuccess("Invitation rejected!");
     }
   };
 };

@@ -8,13 +8,15 @@ import {
 import LoginPage from "./authPages/LoginPage/LoginPage";
 import RegisterPage from "./authPages/RegisterPage/RegisterPage";
 import Dashboard from "./Dashboard/Dashboard";
-import AlertNotification from "./shared/components/AlertNotification";
+import { ThemeProvider } from "./shared/context/ThemeContext";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 import "./App.css";
 
 function App() {
   return (
-    <>
+    <ThemeProvider>
       <Router>
         <Switch>
           <Route exact path="/login">
@@ -31,8 +33,8 @@ function App() {
           </Route>
         </Switch>
       </Router>
-      <AlertNotification />
-    </>
+      <ToastContainer position="bottom-center" autoClose={4000} hideProgressBar newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover theme="colored" />
+    </ThemeProvider>
   );
 }
 

@@ -11,7 +11,10 @@ const MainContainer = styled("div")({
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
-  backgroundColor: "#2F3136",
+  backgroundColor: "var(--color-surface-alt)",
+  borderRight: "1px solid var(--color-border)",
+  boxShadow: "2px 0 8px var(--color-shadow)",
+  transition: "background 0.3s, box-shadow 0.3s, border 0.3s"
 });
 
 const FriendsSideBar = () => {

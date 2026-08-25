@@ -2,16 +2,13 @@ import React, { useState } from "react";
 import Button from "@mui/material/Button";
 import AddIcon from "@mui/icons-material/Add";
 import * as roomHandler from "../../realtimeCommunication/roomHandler";
-import VideoCall from "../../realtimeCommunication/VideoCall"; // Adjust the path as needed
 
 const CreateRoomButton = ({ isUserInRoom, userId }) => {
-  const [isVideoCallActive, setIsVideoCallActive] = useState(false); // State to track video call status
   const [roomId, setRoomId] = useState(null); // State to hold the room ID
 
   const createNewRoomHandler = async () => {
     const newRoomId = await roomHandler.createNewRoom(); // Assuming this function returns a new room ID
     setRoomId(newRoomId); // Set the room ID
-    setIsVideoCallActive(true); // Start the video call
   };
 
   return (
@@ -33,8 +30,6 @@ const CreateRoomButton = ({ isUserInRoom, userId }) => {
       >
         <AddIcon />
       </Button>
-
-      {isVideoCallActive && <VideoCall userId={userId} roomId={roomId} />} {/* Render VideoCall when active */}
     </div>
   );
 };

@@ -3,14 +3,14 @@ import { combineReducers, createStore, applyMiddleware } from "redux";
 import thunk from "redux-thunk";
 
 import authReducer from "./reducers/authReducer";
-import alertReducer from "./reducers/alertReducer";
+// import alertReducer from "./reducers/alertReducer"; // removed
 import friendsReducer from "./reducers/friendsReducer";
 import chatReducer from "./reducers/chatReducer";
 import roomReducer from "./reducers/roomReducer";
 
 const rootReducer = combineReducers({
   auth: authReducer,
-  alert: alertReducer,
+  // alert: alertReducer, // removed
   friends: friendsReducer,
   chat: chatReducer,
   room: roomReducer,

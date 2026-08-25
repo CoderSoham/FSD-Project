@@ -36,12 +36,13 @@ export const getLocalStreamPreview = (onlyAudio = false, callbackFunc) => {
   navigator.mediaDevices
     .getUserMedia(constraints)
     .then((stream) => {
+      console.log('Acquired local stream:', stream);
       store.dispatch(setLocalStream(stream));
+      console.log('Dispatched local stream to Redux');
       callbackFunc();
     })
     .catch((err) => {
-      console.log(err);
-      console.log("Cannot get an access to local stream");
+      console.error("Cannot get an access to local stream", err);
     });
 };
 
@@ -140,5 +141,15 @@ export const switchOutgoingTracks = (stream) => {
         }
       }
     }
+  }
+};
+
+export const stopLocalStream = () => {
+  const localStream = store.getState().room.localStream;
+  if (localStream && localStream.getTracks) {
+    localStream.getTracks().forEach(track => {
+      try { track.stop(); } catch (e) {}
+    });
+    store.dispatch(setLocalStream(null));
   }
 };

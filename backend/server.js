@@ -3,10 +3,13 @@ const http = require("http");
 const cors = require("cors");
 const mongoose = require("mongoose");
 require("dotenv").config();
+const path = require("path");
 
 const socketServer = require("./socketServer");
 const authRoutes = require("./routes/authRoutes");
 const friendInvitationRoutes = require("./routes/friendInvitationRoutes");
+const fileRoutes = require("./routes/fileRoutes");
+const codeRoutes = require("./routes/codeRoutes");
 
 const PORT = process.env.PORT || process.env.API_PORT || 5002;
 
@@ -24,6 +27,9 @@ app.get('/', (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/friend-invitation", friendInvitationRoutes);
+app.use("/api/files", fileRoutes);
+app.use("/api/code", codeRoutes);
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 const server = http.createServer(app);
 socketServer.registerSocketServer(server);

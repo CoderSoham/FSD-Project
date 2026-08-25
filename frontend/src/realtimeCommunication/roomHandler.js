@@ -73,24 +73,32 @@ export const joinRoom = (roomId) => {
 };
 
 export const leaveRoom = () => {
-  const roomId = store.getState().room.roomDetails.roomId;
+  try {
+    const roomId = store.getState().room.roomDetails?.roomId;
 
-  const localStream = store.getState().room.localStream;
-  if (localStream) {
-    localStream.getTracks().forEach((track) => track.stop());
-    store.dispatch(setLocalStream(null));
+    // Stop and cleanup local stream
+    webRTCHandler.stopLocalStream();
+
+    const screenSharingStream = store.getState().room.screenSharingStream;
+    if (screenSharingStream && screenSharingStream.getTracks) {
+      screenSharingStream.getTracks().forEach((track) => {
+        try { track.stop(); } catch (e) {}
+      });
+      store.dispatch(setScreenSharingStream(null));
+    }
+
+    store.dispatch(setRemoteStreams([]));
+    if (webRTCHandler && webRTCHandler.closeAllConnections) {
+      try { webRTCHandler.closeAllConnections(); } catch (e) {}
+    }
+
+    if (socketConnection && socketConnection.leaveRoom && roomId) {
+      try { socketConnection.leaveRoom({ roomId }); } catch (e) {}
+    }
+    store.dispatch(setRoomDetails(null));
+    store.dispatch(setOpenRoom(false, false));
+  } catch (err) {
+    // Optionally log error
+    console.error('Error during leaveRoom cleanup:', err);
   }
-
-  const screenSharingStream = store.getState().room.screenSharingStream;
-  if (screenSharingStream) {
-    screenSharingStream.getTracks().forEach((track) => track.stop());
-    store.dispatch(setScreenSharingStream(null));
-  }
-
-  store.dispatch(setRemoteStreams([]));
-  webRTCHandler.closeAllConnections();
-
-  socketConnection.leaveRoom({ roomId });
-  store.dispatch(setRoomDetails(null));
-  store.dispatch(setOpenRoom(false, false));
 };

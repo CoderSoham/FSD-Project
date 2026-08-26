@@ -6,7 +6,9 @@
   "scripts": {
     "test": "node tests/codeCollab.convergence.test.js && node tests/merge.test.js && node tests/fileAccess.test.js && node tests/prose.test.js && node tests/citation.test.js && node tests/gitExport.test.js && node tests/integration.test.js",
     "start": "nodemon server.js",
-    "test:unit": "node tests/codeCollab.convergence.test.js && node tests/merge.test.js && node tests/fileAccess.test.js && node tests/prose.test.js && node tests/citation.test.js && node tests/gitExport.test.js"
+    "test:unit": "node tests/codeCollab.convergence.test.js && node tests/merge.test.js && node tests/fileAccess.test.js && node tests/prose.test.js && node tests/citation.test.js && node tests/gitExport.test.js",
+    "dev:db": "node scripts/dev-db.js",
+    "dev": "node scripts/dev-db.js --with-server"
   },
   "author": "",
   "license": "ISC",

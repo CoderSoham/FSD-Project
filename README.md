@@ -116,6 +116,19 @@ keys. Generate the JWT secret with `openssl rand -base64 48`. Then:
 npm start
 ```
 
+**No MongoDB to hand?** This starts a throwaway in-memory database and runs the
+API against it, no `.env` needed:
+
+```bash
+npm run dev
+```
+
+Data is discarded when you stop it, which is the point — it exists so the app
+can be developed against without an Atlas cluster or a local `mongod`.
+
+If the API starts but every request returns 503, the database is unreachable.
+`GET /healthz` reports which of the two is unhappy.
+
 Run the tests with `npm test` in `backend/`. The integration suite downloads a
 MongoDB binary on first run and skips itself if that is unavailable.
 
@@ -147,7 +160,7 @@ These are real and worth knowing before you judge the code:
   integration suite that boots the real Express app against an in-memory
   MongoDB and drives the HTTP surface. The WebRTC and socket layers still have
   no automated coverage.
-- **CORS is pinned to the deployed frontend origin** in `server.js`, so a local
+- **CORS is pinned to a single origin** in `server.js`, so a local
   frontend talking to the deployed API will be rejected. Run both locally or
   both deployed.
 

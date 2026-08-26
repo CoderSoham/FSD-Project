@@ -28,6 +28,22 @@ app.get('/', (req, res) => {
   res.send('Server is running!');
 });
 
+// Says what is actually wrong rather than just 'ok'.
+app.get('/healthz', (req, res) => {
+  const states = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+  const db = states[mongoose.connection.readyState] || 'unknown';
+  res.status(db === 'connected' ? 200 : 503).json({ api: 'ok', database: db });
+});
+
+// Anything that touches the database fails fast with a readable reason.
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS' || mongoose.connection.readyState === 1) return next();
+  res.status(503).json({
+    error: 'The database is unavailable, so this request cannot be served. ' +
+           'If you are running locally, check that MONGO_URI points at a reachable database.',
+  });
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/friend-invitation", friendInvitationRoutes);
 app.use("/api/files", fileRoutes);
@@ -40,20 +56,37 @@ app.use("/api/public", publicRoutes);
 const server = http.createServer(app);
 socketServer.registerSocketServer(server);
 
-mongoose
-  .connect(process.env.MONGO_URI || "mongodb://localhost:27017/your-database-name", {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => {
-    server.listen(PORT, '127.0.0.1', () => {
-      console.log(`Server is listening on ${PORT}`);
-    });
-  })
-  .catch((err) => {
-    console.log("Database connection failed. Server not started");
-    console.error(err);
-  });
+// The server listens whether or not the database is reachable.
+//
+// This used to sit inside the connect().then(), so any database problem left
+// nothing listening on the port at all -- the browser got a connection refused
+// and the user got "Registration failed" with no way to tell a paused cluster
+// from a typo in their password. An app that cannot reach its database should
+// say so, not vanish.
+const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/gitcord";
+
+const connectToDatabase = async () => {
+  try {
+    await mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 8000 });
+    console.log("Connected to MongoDB");
+  } catch (err) {
+    const host = (String(MONGO_URI).match(/@([^/?]+)/) || [])[1] || "unknown host";
+    console.error(`\n  MongoDB is not reachable at ${host}`);
+    console.error(`  ${err.message.split("\n")[0]}`);
+    if (/ENOTFOUND|querySrv/.test(err.message)) {
+      console.error("\n  An SRV lookup failure usually means an Atlas cluster is paused or deleted.");
+      console.error("  Resume it in Atlas, or point MONGO_URI at another database.");
+      console.error("  For local work with no Atlas at all: npm run dev:db\n");
+    }
+    console.error("  The API is still listening; database-backed routes will return 503.\n");
+    setTimeout(connectToDatabase, 15000); // keep trying, so a resume needs no restart
+  }
+};
+
+server.listen(PORT, '127.0.0.1', () => {
+  console.log(`Server is listening on ${PORT}`);
+});
+connectToDatabase();
 
 module.exports = (req, res) => {
   app(req, res);

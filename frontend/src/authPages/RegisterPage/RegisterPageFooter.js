@@ -5,7 +5,7 @@ import { useHistory } from "react-router-dom";
 import { Tooltip } from "@mui/material";
 
 const getFormNotValidMessage = () => {
-  return "Username should contains between 3 and 12 characters and password should contains between 6 and 12 character. Also correct e-mail address should provided";
+  return "Use a valid e-mail address, a username of 3-32 characters, and a password of at least 8 characters.";
 };
 
 const getFormValidMessage = () => {

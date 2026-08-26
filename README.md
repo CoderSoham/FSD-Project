@@ -116,15 +116,26 @@ keys. Generate the JWT secret with `openssl rand -base64 48`. Then:
 npm start
 ```
 
-**No MongoDB to hand?** This starts a throwaway in-memory database and runs the
-API against it, no `.env` needed:
+**No MongoDB to hand?** This starts a throwaway in-memory database, seeds it,
+and runs the API against it — no `.env` needed:
 
 ```bash
 npm run dev
 ```
 
-Data is discarded when you stop it, which is the point — it exists so the app
-can be developed against without an Atlas cluster or a local `mongod`.
+It creates four accounts that are already friends with each other, so you can
+test calls, screen share and collaborative editing immediately instead of
+registering two users and exchanging invitations first:
+
+| | |
+|---|---|
+| `ada@example.com` · `grace@example.com` · `alan@example.com` · `katherine@example.com` | password `devpassword` |
+
+It also seeds `paper.md` with history on `main` and a `results` branch, so the
+version list, diff and merge have something in them. Open two browser profiles
+and sign in as two different people to exercise the realtime paths.
+
+Data is discarded when you stop it, which is the point.
 
 If the API starts but every request returns 503, the database is unreachable.
 `GET /healthz` reports which of the two is unhappy.

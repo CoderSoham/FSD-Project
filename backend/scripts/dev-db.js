@@ -30,6 +30,17 @@ const launchServer = process.argv.includes("--with-server");
   console.log("\n  Development database ready.\n");
   console.log(`  MONGO_URI=${uri}\n`);
 
+  // Seed before the API starts, so the first page load already has friends.
+  try {
+    const mongoose = require("mongoose");
+    await mongoose.connect(uri);
+    const { seed, describe } = require("./seed");
+    describe(await seed());
+    await mongoose.disconnect();
+  } catch (err) {
+    console.error("  Could not seed the development database:", err.message);
+  }
+
   let child = null;
   if (launchServer) {
     console.log("  Starting the API against it. Ctrl-C stops both.\n");

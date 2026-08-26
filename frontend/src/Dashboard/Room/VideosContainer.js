@@ -29,21 +29,13 @@ const VideosContainer = ({
   remoteStreams,
   screenSharingStream,
 }) => {
-  // Compose all streams to show
-  const streams = [
-    ...(screenSharingStream ? [screenSharingStream] : [localStream]),
-    ...remoteStreams
-  ].filter(Boolean);
-
-  console.log('VideosContainer localStream:', localStream);
-  console.log('VideosContainer streams:', streams);
-  if (streams.length > 0) {
-    console.log('First stream tracks:', streams[0].getTracks());
-  }
+  // Our own tile first: the screen share replaces the camera while sharing.
+  const ourStream = screenSharingStream || localStream;
+  const streams = [ourStream, ...remoteStreams].filter(Boolean);
 
   return (
     <MainContainer streamCount={streams.length}>
-      {streams.filter(stream => stream && (stream.getVideoTracks().length > 0 || stream.getAudioTracks().length > 0)).map((stream, idx) => (
+      {streams.map((stream, idx) => (
         <div
           key={stream.id || idx}
           style={streams.length === 1
@@ -53,7 +45,11 @@ const VideosContainer = ({
         >
           <Video
             stream={stream}
-            isLocalStream={idx === 0 && !screenSharingStream}
+            // The first tile is ours whether it is the camera or the screen.
+            // Muting it matters either way: an unmuted screen-share tile feeds
+            // system audio straight back into the call.
+            isLocalStream={idx === 0}
+            label={idx === 0 ? (screenSharingStream ? "Your screen" : "You") : undefined}
           />
         </div>
       ))}

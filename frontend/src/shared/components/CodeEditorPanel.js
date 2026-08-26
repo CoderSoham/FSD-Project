@@ -147,21 +147,25 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
   const [panelSize, setPanelSize] = useState({ width: 0.7 * window.innerWidth, height: 0.7 * window.innerHeight });
   const [panelPos, setPanelPos] = useState({ x: window.innerWidth * 0.15, y: window.innerHeight * 0.15 });
 
-  useEffect(() => {
-    if (showHistory && filename) {
-      fetchHistory();
-    }
-    // eslint-disable-next-line
-  }, [showHistory, filename, currentBranch]);
+  // Every /api/code call requires a token. Firing them before the user has one
+  // produced a pair of 403s in the console on the login and register screens,
+  // and would surface as an error toast on a slow connection.
+  const signedIn = Boolean(user?.token);
 
   useEffect(() => {
-    if (filename) fetchBranchesList();
+    if (signedIn && showHistory && filename) fetchHistory();
     // eslint-disable-next-line
-  }, [filename]);
+  }, [signedIn, showHistory, filename, currentBranch]);
 
   useEffect(() => {
-    fetchComments();
-  }, [filename, currentBranch, history]);
+    if (signedIn && filename) fetchBranchesList();
+    // eslint-disable-next-line
+  }, [signedIn, filename]);
+
+  useEffect(() => {
+    if (signedIn && filename) fetchComments();
+    // eslint-disable-next-line
+  }, [signedIn, filename, currentBranch, history]);
 
   // Collaborative editing is bound to the Monaco model by Yjs, so there is no
   // onChange plumbing here at all -- the CRDT owns the document text and the

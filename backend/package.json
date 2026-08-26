@@ -8,7 +8,8 @@
     "start": "nodemon server.js",
     "test:unit": "node tests/codeCollab.convergence.test.js && node tests/merge.test.js && node tests/fileAccess.test.js && node tests/prose.test.js && node tests/citation.test.js && node tests/gitExport.test.js",
     "dev:db": "node scripts/dev-db.js",
-    "dev": "node scripts/dev-db.js --with-server"
+    "dev": "node scripts/dev-db.js --with-server",
+    "seed": "node scripts/seed.js"
   },
   "author": "",
   "license": "ISC",

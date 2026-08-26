@@ -40,86 +40,86 @@ const Fallback = styled("div")({
   borderRadius: "12px"
 });
 
-const Video = ({ stream, isLocalStream }) => {
-  const videoRef = useRef();
+/**
+ * One participant's video tile.
+ *
+ * The element is always mounted and hidden with CSS when there is nothing to
+ * show. It used to be rendered conditionally on `hasVideo`, which could never
+ * become true: the effect that sets it reads `videoRef.current`, and the ref is
+ * only attached when the element renders, which only happens once `hasVideo` is
+ * true. So the ref was always undefined, the effect always took its else
+ * branch, and every tile showed the avatar fallback no matter what -- local
+ * camera and screen share alike.
+ *
+ * Keeping the element mounted also avoids tearing down and re-creating the
+ * media element every time a track is added or removed.
+ */
+const Video = ({ stream, isLocalStream, label }) => {
+  const videoRef = useRef(null);
   const [hasVideo, setHasVideo] = useState(false);
 
-  console.log(`[Video.js Render] isLocalStream=${isLocalStream}, stream id: ${stream?.id}`);
-
   useEffect(() => {
-    console.log(`[Video.js useEffect] stream changed. id: ${stream?.id}`);
     const video = videoRef.current;
-
-    const logTracks = (s) => {
-      if (!s) {
-        console.log('[Video.js logTracks] Stream is null or undefined.');
-        return false; // Return false if no stream
-      }
-      console.log(`[Video.js logTracks] Logging tracks for stream id: ${s.id}`);
-      const allTracks = s.getTracks();
-      console.log(`[Video.js logTracks] Total tracks: ${allTracks.length}`, allTracks);
-      allTracks.forEach((track, i) => {
-        console.log(`[Video.js logTracks] Track ${i}: kind=${track.kind}, enabled=${track.enabled}, muted=${track.muted}, readyState=${track.readyState}, id=${track.id}`);
-      });
-      const videoTracks = s.getVideoTracks();
-      console.log(`[Video.js logTracks] Video tracks count: ${videoTracks.length}`, videoTracks);
-      return videoTracks.length > 0;
-    };
-
-    if (stream && video) {
-      video.srcObject = stream;
-      video.onloadedmetadata = () => {
-        console.log(`[Video.js] onloadedmetadata for stream id: ${stream.id}`);
-        video.play().catch(err => console.error('[Video.js] video.play() failed', err));
-      };
-      
-      video.onerror = () => {
-        console.error(`[Video.js] Video error for stream id: ${stream.id}`, video.error);
-      };
-
-      const hasVideoTracks = logTracks(stream);
-      setHasVideo(hasVideoTracks);
-
-      const handleTracksChanged = () => {
-        console.log(`[Video.js handleTracksChanged] 'addtrack' or 'removetrack' event fired for stream id: ${stream.id}`);
-        const newHasVideo = logTracks(stream);
-        setHasVideo(newHasVideo);
-      };
-
-      stream.addEventListener('addtrack', handleTracksChanged);
-      stream.addEventListener('removetrack', handleTracksChanged);
-
-      return () => {
-        console.log(`[Video.js cleanup] Cleaning up for stream id: ${stream?.id}`);
-        if (video) {
-          video.srcObject = null;
-          video.onloadedmetadata = null;
-          video.onerror = null;
-        }
-        stream.removeEventListener('addtrack', handleTracksChanged);
-        stream.removeEventListener('removetrack', handleTracksChanged);
-      };
-    } else {
-      console.log('[Video.js useEffect] No stream or video ref. Cleaning up.');
+    if (!stream || !video) {
       setHasVideo(false);
       if (video) video.srcObject = null;
+      return undefined;
     }
+
+    video.srcObject = stream;
+
+    // Autoplay can be refused; a muted element is always allowed to play, and
+    // the local tile is muted anyway to avoid feeding audio back.
+    const attemptPlay = () => {
+      const p = video.play();
+      if (p && p.catch) p.catch(() => { /* a user gesture will start it */ });
+    };
+    video.onloadedmetadata = attemptPlay;
+    attemptPlay();
+
+    // A track that exists but is ended or muted should not count as video --
+    // otherwise turning the camera off leaves a frozen last frame.
+    const liveVideo = () =>
+      stream.getVideoTracks().some((t) => t.readyState === "live" && !t.muted);
+
+    const sync = () => setHasVideo(liveVideo());
+    sync();
+
+    const tracks = stream.getVideoTracks();
+    tracks.forEach((t) => {
+      t.addEventListener("mute", sync);
+      t.addEventListener("unmute", sync);
+      t.addEventListener("ended", sync);
+    });
+    stream.addEventListener("addtrack", sync);
+    stream.addEventListener("removetrack", sync);
+
+    return () => {
+      tracks.forEach((t) => {
+        t.removeEventListener("mute", sync);
+        t.removeEventListener("unmute", sync);
+        t.removeEventListener("ended", sync);
+      });
+      stream.removeEventListener("addtrack", sync);
+      stream.removeEventListener("removetrack", sync);
+      video.onloadedmetadata = null;
+      video.srcObject = null;
+    };
   }, [stream]);
 
   return (
     <MainContainer>
-      {console.log(`[Video.js Render return] hasVideo=${hasVideo}, stream id: ${stream?.id}`)}
-      {hasVideo ? (
-        <VideoEl
-          ref={videoRef}
-          autoPlay
-          muted={isLocalStream}
-          playsInline
-          disablePictureInPicture
-        />
-      ) : (
+      <VideoEl
+        ref={videoRef}
+        autoPlay
+        muted={isLocalStream}
+        playsInline
+        disablePictureInPicture
+        style={{ display: hasVideo ? "block" : "none" }}
+      />
+      {!hasVideo && (
         <Fallback>
-          <Avatar username={isLocalStream ? "You" : "User"} />
+          <Avatar username={label || (isLocalStream ? "You" : "User")} />
         </Fallback>
       )}
     </MainContainer>

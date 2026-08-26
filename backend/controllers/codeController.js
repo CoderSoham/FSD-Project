@@ -3,6 +3,7 @@ const resolveIdentity = require('../middleware/identity');
 const { threeWayMerge } = require('../utils/threeWayMerge');
 const { findCommonAncestor, tipOf } = require('../utils/versionGraph');
 const { hashContent, formatCitation } = require('../utils/citation');
+const { buildFastImportStream } = require('../utils/gitExport');
 
 // POST /api/code/save
 const saveCodeVersion = async (req, res) => {
@@ -187,7 +188,28 @@ const getPublicVersion = async (req, res) => {
   });
 };
 
+// GET /api/code/export/:filename   -> a git fast-import stream
+//
+// The point is that the history can leave. A group that knows it can take its
+// work out is a group willing to put its work in.
+const exportHistory = async (req, res) => {
+  const { filename } = req.params;
+  const versions = await CodeVersion.find({ filename }).sort({ timestamp: 1 });
+  if (!versions.length) return res.status(404).json({ error: 'No history for that document' });
+
+  // Only export history the requester actually authored or can already read.
+  // Every version of a document is visible to anyone who can open it, so this
+  // mirrors the read path rather than adding a second permission model.
+  const stream = buildFastImportStream(versions, filename);
+  const safe = String(filename).replace(/[^\w.-]+/g, '_');
+
+  res.setHeader('Content-Type', 'application/octet-stream');
+  res.setHeader('Content-Disposition', `attachment; filename="${safe}.fast-import"`);
+  res.send(stream);
+};
+
 module.exports = {
+  exportHistory,
   setCitable,
   getCitation,
   getPublicVersion,

@@ -1,6 +1,6 @@
 const express = require('express');
 const auth = require('../middleware/auth');
-const { saveCodeVersion, getCodeHistory, getCodeVersion, createBranch, getBranches, mergeBranches, setCitable, getCitation } = require('../controllers/codeController');
+const { saveCodeVersion, getCodeHistory, getCodeVersion, createBranch, getBranches, mergeBranches, setCitable, getCitation, exportHistory } = require('../controllers/codeController');
 const codeCommentController = require('../controllers/codeCommentController');
 const router = express.Router();
 
@@ -12,6 +12,7 @@ router.get('/branches/:filename', auth, getBranches);
 router.post('/merge', auth, mergeBranches);
 router.post('/version/:versionId/cite', auth, setCitable);
 router.get('/version/:versionId/citation', auth, getCitation);
+router.get('/export/:filename', auth, exportHistory);
 router.post('/comments', auth, codeCommentController.addComment);
 router.get('/comments', auth, codeCommentController.getComments);
 router.delete('/comments/:id', auth, codeCommentController.deleteComment);

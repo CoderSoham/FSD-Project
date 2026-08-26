@@ -270,3 +270,22 @@ export const getPublicVersion = async (versionId) => {
     return { error: "not-available" };
   }
 };
+
+/** Download a document's full history as a git fast-import stream. */
+export const exportHistory = async (filename) => {
+  try {
+    const res = await apiClient.get(`/code/export/${encodeURIComponent(filename)}`,
+      { responseType: "blob" });
+    const href = window.URL.createObjectURL(res.data);
+    const a = document.createElement("a");
+    a.href = href;
+    a.download = `${filename.replace(/[^\w.-]+/g, "_")}.fast-import`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(href);
+    return { ok: true };
+  } catch (e) {
+    return { error: "Could not export the history." };
+  }
+};

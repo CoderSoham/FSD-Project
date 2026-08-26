@@ -61,12 +61,15 @@ function renderFilePreview(content) {
   if (content.match(/\.(mp4|webm|ogg)$/i)) {
     return <video src={content} controls style={{ maxWidth: 240, borderRadius: 8, marginTop: 4 }} />;
   }
+  // Legacy messages whose content is a raw `/uploads/<name>` path. That route
+  // no longer exists -- it served research documents to anyone holding a
+  // filename -- so rendering it as a link would just produce a dead download.
   if (content.startsWith("/uploads/")) {
     const filename = content.split("/").pop();
     return (
-      <a href={content} download style={{ color: "var(--color-accent)", textDecoration: "underline" }}>
-        {filename}
-      </a>
+      <span style={{ color: "var(--color-secondary)", fontStyle: "italic" }} title={filename}>
+        {filename} — shared before secure downloads, no longer retrievable
+      </span>
     );
   }
   return content;

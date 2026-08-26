@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { styled } from "@mui/system";
-import { uploadFile, getRoomMessages, postRoomMessage } from '../../api';
+import { getRoomMessages, postRoomMessage, downloadRoomFile } from '../../api';
 import { notifyError, notifySuccess } from '../../shared/utils/notification';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import Message from "../Messenger/Messages/Message";
@@ -171,12 +171,23 @@ const RoomChatPanel = ({ open, setOpen }) => {
     });
   };
 
-  // Helper to ensure file URLs are absolute
-  const getFileUrl = (url) => {
-    if (!url) return '';
-    if (url.startsWith('http')) return url;
-    if (url.startsWith('/uploads/')) return `${BACKEND_URL}${url}`;
-    return url;
+  // Shared files are fetched through the authenticated download route rather
+  // than linked directly. A bare href sends no Authorization header, and the
+  // old `/uploads/<name>` static path handed the document to anyone with the
+  // filename -- which for unpublished research is the whole problem.
+  const fileIdFrom = (url) => {
+    const m = /\/files\/([0-9a-fA-F]{24})\/download/.exec(url || '');
+    return m ? m[1] : null;
+  };
+
+  const handleDownload = async (meta) => {
+    const id = meta?.fileId || fileIdFrom(meta?.url);
+    if (!id) {
+      notifyError('This file was shared before secure downloads and can no longer be fetched.');
+      return;
+    }
+    const res = await downloadRoomFile(id, meta.filename);
+    if (res.error) notifyError(res.error);
   };
 
   return (
@@ -190,14 +201,31 @@ const RoomChatPanel = ({ open, setOpen }) => {
       )}
       <MessagesList>
         {loading ? <div>Loading...</div> : messages.map(msg => (
+          msg.type === 'file' ? (
+            <div key={msg._id} style={{ padding: '6px 12px' }}>
+              <span style={{ color: '#8e9297', fontSize: 12, marginRight: 8 }}>
+                {msg.username}
+              </span>
+              <button
+                onClick={() => handleDownload(msg.fileMeta)}
+                style={{
+                  background: 'transparent', border: '1px solid #4f545c', borderRadius: 4,
+                  color: '#00b0f4', cursor: 'pointer', padding: '4px 10px', fontSize: 14,
+                }}
+              >
+                {msg.fileMeta?.filename || 'Download file'}
+              </button>
+            </div>
+          ) : (
           <Message
             key={msg._id}
-            content={msg.type === 'file' ? getFileUrl(msg.fileMeta?.url) : msg.content}
+            content={msg.content}
             username={msg.username}
             date={new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             sameAuthor={false}
             sameDay={false}
           />
+          )
         ))}
       </MessagesList>
       <InputRow>

@@ -206,3 +206,29 @@ const checkResponseCode = (exception) => {
     (responseCode === 401 || responseCode === 403) && logout();
   }
 };
+
+/**
+ * Fetch a shared file through the authenticated download route.
+ *
+ * A plain <a href> cannot be used: the route requires an Authorization header
+ * and a link sends none. So the blob is fetched through the same axios client
+ * that carries the token, then handed to the browser as a save.
+ */
+export const downloadRoomFile = async (fileId, filename) => {
+  try {
+    const res = await apiClient.get(`/files/${fileId}/download`, { responseType: "blob" });
+    const href = window.URL.createObjectURL(res.data);
+    const a = document.createElement("a");
+    a.href = href;
+    a.download = filename || "download";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(href);
+    return { ok: true };
+  } catch (err) {
+    return { error: err?.response?.status === 404
+      ? "File not found, or you do not have access to it."
+      : "Download failed." };
+  }
+};

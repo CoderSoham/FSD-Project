@@ -3,7 +3,7 @@ const http = require("http");
 const cors = require("cors");
 const mongoose = require("mongoose");
 require("dotenv").config();
-const path = require("path");
+
 
 const socketServer = require("./socketServer");
 const authRoutes = require("./routes/authRoutes");
@@ -29,7 +29,9 @@ app.use("/api/auth", authRoutes);
 app.use("/api/friend-invitation", friendInvitationRoutes);
 app.use("/api/files", fileRoutes);
 app.use("/api/code", codeRoutes);
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+// Uploads are NOT served statically. They are research documents; a static
+// mount hands them to anyone who learns a filename. Every fetch goes through
+// GET /api/files/:fileId/download, which checks the file's access list.
 
 const server = http.createServer(app);
 socketServer.registerSocketServer(server);

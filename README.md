@@ -37,7 +37,7 @@ file sharing inside a room.
 | **Branches and merges** | Branch from any version and merge back with a real three-way merge — the common ancestor is found by walking the version DAG, non-overlapping edits from both sides are kept, and overlapping ones become labelled conflict blocks rather than a silent winner. |
 | **Version diffs** | Any two versions rendered side by side via `react-diff-viewer`. |
 | **Inline comments** | Comments anchored to a position in a specific version, so review feedback stays attached to the text it refers to. |
-| **File sharing** | Upload files into a room; they appear in the room's file list alongside its messages. |
+| **File sharing** | Upload files into a room; they appear in the room's file list alongside its messages. Downloads go through an authenticated route that checks an access list captured at upload time — nothing is served from a public path. |
 
 > **Authorship comes from the JWT, never the request body.** A version can only
 > be attributed to the account that actually saved it. The history is the
@@ -127,10 +127,6 @@ account — WebRTC needs two real peers.
 
 These are real and worth knowing before you judge the code:
 
-- **Uploaded files are served from a public static path.** `/uploads` is
-  `express.static` with unguessable-ish filenames but no access check, so anyone
-  with a URL can fetch a research document. The upload route is authenticated;
-  the download path is not.
 - **STUN only, no TURN.** `webRTCHandler.js` configures Google's public STUN
   server and leaves the TURN branch as a TODO. Peers behind symmetric NAT or a
   restrictive corporate firewall will fail to connect. A production deployment
@@ -141,8 +137,9 @@ These are real and worth knowing before you judge the code:
 - **Recording is client-side and unencrypted.** RecordRTC captures the local
   stream and `file-saver` writes it to disk. There is no consent prompt for the
   other participants.
-- **Thin test coverage.** `npm test` covers collaborative-editing convergence
-  and the merge/DAG logic. The HTTP layer and sockets are untested.
+- **Thin test coverage.** `npm test` covers collaborative-editing convergence,
+  the merge/DAG logic, and file access rules. The HTTP layer and sockets are
+  untested end to end.
 - **CORS is pinned to the deployed frontend origin** in `server.js`, so a local
   frontend talking to the deployed API will be rejected. Run both locally or
   both deployed.

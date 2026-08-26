@@ -2,7 +2,7 @@ const express = require('express');
 const auth = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
-const { uploadFile, getRoomFiles, getRoomMessages, postRoomMessage } = require('../controllers/fileController');
+const { uploadFile, downloadFile, getRoomFiles, getRoomMessages, postRoomMessage } = require('../controllers/fileController');
 
 const router = express.Router();
 
@@ -22,6 +22,7 @@ const upload = multer({ storage });
 // POST /api/files/upload
 router.post('/upload', auth, upload.single('file'), uploadFile);
 
+router.get('/:fileId/download', auth, downloadFile);
 router.get('/room/:roomId', auth, getRoomFiles);
 router.get('/room/:roomId/messages', auth, getRoomMessages);
 router.post('/room/:roomId/messages', auth, postRoomMessage);

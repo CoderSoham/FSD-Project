@@ -5,6 +5,7 @@ import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
 import DiffViewer from "react-diff-viewer";
 import { saveCodeVersion, getCodeHistory, getCodeVersion, createBranch, getBranches, mergeBranches, addCodeComment, getCodeComments, deleteCodeComment } from '../../api';
 import { connectCollabSession } from '../utils/collabSession';
+import { MonacoBinding } from 'y-monaco';
 import { Rnd } from 'react-rnd';
 import { notifySuccess, notifyError, notifyWarning } from '../utils/notification';
 
@@ -167,12 +168,21 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
   // binding applies remote edits directly to the model.
   useEffect(() => {
     if (!sessionId || !open || !editorReady || !editorRef.current) return;
-    const teardown = connectCollabSession({
-      sessionId,
-      editor: editorRef.current,
-      user,
-    });
-    return teardown;
+    const session = connectCollabSession({ sessionId, user });
+    if (!session) return;
+
+    // The transport is shared with the prose editor; only the binding differs.
+    const binding = new MonacoBinding(
+      session.doc.getText('code'),
+      editorRef.current.getModel(),
+      new Set([editorRef.current]),
+      session.awareness
+    );
+
+    return () => {
+      binding.destroy();
+      session.destroy();
+    };
   }, [sessionId, open, editorReady, user]);
 
   const fetchHistory = async () => {

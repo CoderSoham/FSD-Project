@@ -2,6 +2,13 @@ const mongoose = require('mongoose');
 
 const codeVersionSchema = new mongoose.Schema({
   filename: { type: String, required: true },
+  // 'code' versions store source text; 'prose' versions store Markdown.
+  //
+  // Prose is serialised to Markdown rather than ProseMirror JSON specifically
+  // so that diffs, three-way merges and conflict blocks stay readable. A
+  // line-based merge over pretty-printed JSON would technically work and would
+  // be useless to a human reviewing a paper.
+  docType: { type: String, enum: ['code', 'prose'], default: 'code', index: true },
   language: { type: String, required: true },
   content: { type: String, required: true },
   userId: { type: String, required: true },

@@ -34,6 +34,7 @@ file sharing inside a room.
 | **Call recording** | Records the room stream via RecordRTC and saves it to your machine as an `.mp4`. Entirely local — nothing is uploaded. |
 | **Collaborative editing** | A Monaco editor bound to a Yjs CRDT. Concurrent edits merge deterministically, edits made while disconnected reconcile on reconnect, and cursors are carried by awareness. |
 | **Document versions** | Every save creates a version carrying its parent, forming a history you can walk rather than a flat list of saves. |
+| **Rich text documents** | A TipTap editor for papers and notes, on the same CRDT transport and the same version model as code. Prose is stored as Markdown, so diffs, merges and conflict blocks stay readable — and the work can leave in a format that outlives the tool. |
 | **Branches and merges** | Branch from any version and merge back with a real three-way merge — the common ancestor is found by walking the version DAG, non-overlapping edits from both sides are kept, and overlapping ones become labelled conflict blocks rather than a silent winner. |
 | **Version diffs** | Any two versions rendered side by side via `react-diff-viewer`. |
 | **Inline comments** | Comments anchored to a position in a specific version, so review feedback stays attached to the text it refers to. |

@@ -127,9 +127,9 @@ export const saveCodeVersion = async (data) => {
   }
 };
 
-export const getCodeHistory = async (filename) => {
+export const getCodeHistory = async (filename, params = {}) => {
   try {
-    const res = await apiClient.get(`/code/history/${encodeURIComponent(filename)}`);
+    const res = await apiClient.get(`/code/history/${encodeURIComponent(filename)}`, { params });
     return res.data;
   } catch (e) {
     return { error: true, message: e.response?.data?.error || 'Failed to fetch history' };

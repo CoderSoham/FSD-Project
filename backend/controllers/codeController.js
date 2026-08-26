@@ -5,20 +5,25 @@ const { findCommonAncestor, tipOf } = require('../utils/versionGraph');
 
 // POST /api/code/save
 const saveCodeVersion = async (req, res) => {
-  const { filename, language, content, parentVersionId } = req.body;
+  const { filename, language, content, parentVersionId, docType, branch } = req.body;
   if (!filename || !language || !content) {
     return res.status(400).json({ error: 'Missing required fields' });
+  }
+  if (docType && !['code', 'prose'].includes(docType)) {
+    return res.status(400).json({ error: 'docType must be code or prose' });
   }
   // Authorship is taken from the verified token so a version can never be
   // attributed to someone who did not write it.
   const { userId, username } = await resolveIdentity(req);
   const version = await CodeVersion.create({
     filename,
+    docType: docType || 'code',
     language,
     content,
     userId,
     username,
     parentVersionId: parentVersionId || null,
+    branch: branch || 'main',
   });
   res.status(201).json(version);
 };
@@ -26,7 +31,10 @@ const saveCodeVersion = async (req, res) => {
 // GET /api/code/history/:filename
 const getCodeHistory = async (req, res) => {
   const { filename } = req.params;
-  const versions = await CodeVersion.find({ filename }).sort({ timestamp: -1 });
+  const { docType } = req.query;
+  const query = { filename };
+  if (docType) query.docType = docType;
+  const versions = await CodeVersion.find(query).sort({ timestamp: -1 });
   res.json(versions);
 };
 
@@ -48,6 +56,7 @@ const createBranch = async (req, res) => {
   if (!fromVersion) return res.status(404).json({ error: 'Base version not found' });
   const newVersion = await CodeVersion.create({
     filename,
+    docType: fromVersion.docType,
     language: fromVersion.language,
     content: fromVersion.content,
     userId: fromVersion.userId,
@@ -95,6 +104,7 @@ const mergeBranches = async (req, res) => {
 
   const mergedVersion = await CodeVersion.create({
     filename,
+    docType: sourceVersion.docType,
     language: sourceVersion.language,
     content,
     userId,

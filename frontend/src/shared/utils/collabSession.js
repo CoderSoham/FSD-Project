@@ -1,25 +1,27 @@
 import * as Y from "yjs";
-import { MonacoBinding } from "y-monaco";
 import { Awareness, encodeAwarenessUpdate, applyAwarenessUpdate } from "y-protocols/awareness";
 import { getSocket } from "../../realtimeCommunication/socketConnection";
 
 /**
- * Binds a Monaco editor to a shared Yjs document over the app's existing
- * authenticated socket.
+ * Opens a shared Yjs document over the app's existing authenticated socket.
+ *
+ * Deliberately knows nothing about editors. It owns the transport -- sync,
+ * awareness, reconnect -- and hands back the doc so a caller can bind whatever
+ * it likes: Monaco for code, ProseMirror for prose. Both document types then
+ * share one implementation of the hard part.
  *
  * Replaces a whole-document broadcast on every keystroke, which was
  * last-write-wins: two people typing in the same paragraph overwrote each
  * other, and a dropped connection diverged permanently. A CRDT converges no
  * matter the order updates arrive in, and survives going offline.
  *
- * Returns a teardown function. Call it when the editor unmounts.
+ * Returns { doc, awareness, destroy }. Call destroy() on unmount.
  */
-export const connectCollabSession = ({ sessionId, editor, monaco, user }) => {
+export const connectCollabSession = ({ sessionId, user }) => {
   const socket = getSocket();
-  if (!socket || !sessionId || !editor) return () => {};
+  if (!socket || !sessionId) return null;
 
   const doc = new Y.Doc();
-  const yText = doc.getText("code");
   const awareness = new Awareness(doc);
 
   awareness.setLocalStateField("user", {
@@ -85,22 +87,16 @@ export const connectCollabSession = ({ sessionId, editor, monaco, user }) => {
   };
   socket.on("connect", onReconnect);
 
-  const binding = new MonacoBinding(
-    yText,
-    editor.getModel(),
-    new Set([editor]),
-    awareness
-  );
-
-  return () => {
+  const destroy = () => {
     socket.emit("y:leave", { sessionId });
     socket.off("y:update", onRemoteUpdate);
     socket.off("y:awareness", onRemoteAwareness);
     socket.off("connect", onReconnect);
     doc.off("update", onDocUpdate);
     awareness.off("update", onAwarenessUpdate);
-    binding.destroy();
     awareness.destroy();
     doc.destroy();
   };
+
+  return { doc, awareness, destroy };
 };

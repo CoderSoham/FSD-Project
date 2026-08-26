@@ -18,6 +18,14 @@ const codeVersionSchema = new mongoose.Schema({
   // A merge has two parents. Without this the graph cannot represent that a
   // merge happened, which makes the history a lie and blocks a faithful export.
   mergedFromVersionId: { type: mongoose.Schema.Types.ObjectId, ref: 'CodeVersion', default: null },
+  // sha256 of `content`, so a reader can verify the version they are looking
+  // at is the one that was cited without having to trust this server.
+  contentHash: { type: String, index: true },
+  // Off by default. A version becomes readable without an account only when
+  // an author explicitly publishes it -- the same rule as file access
+  // (utils/fileAccess.js): durable artefacts carry their own permission.
+  citable: { type: Boolean, default: false },
+  citedAt: { type: Date, default: null },
   hasConflicts: { type: Boolean, default: false },
   conflictCount: { type: Number, default: 0 },
   branch: { type: String, default: 'main' },

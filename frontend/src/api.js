@@ -232,3 +232,41 @@ export const downloadRoomFile = async (fileId, filename) => {
       : "Download failed." };
   }
 };
+
+export const setVersionCitable = async (versionId, citable) => {
+  try {
+    const res = await apiClient.post(`/code/version/${versionId}/cite`, { citable });
+    return res.data;
+  } catch (e) {
+    return { error: e?.response?.data?.error || "Could not update citation status." };
+  }
+};
+
+export const getCitation = async (versionId) => {
+  try {
+    const res = await apiClient.get(`/code/version/${versionId}/citation`);
+    return res.data;
+  } catch (e) {
+    return { error: "Could not load the citation." };
+  }
+};
+
+/**
+ * A published version, fetched without authentication.
+ *
+ * Bypasses `apiClient` deliberately: that instance attaches the stored token
+ * and logs the user out on a 401, neither of which should happen to a visitor
+ * following a citation who has no account at all.
+ */
+export const getPublicVersion = async (versionId) => {
+  const base = process.env.NODE_ENV === "production"
+    ? "https://fsd-project-api.vercel.app/api"
+    : "http://localhost:5002/api";
+  try {
+    const res = await fetch(`${base}/public/versions/${versionId}`);
+    if (!res.ok) return { error: "not-available" };
+    return await res.json();
+  } catch {
+    return { error: "not-available" };
+  }
+};

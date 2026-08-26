@@ -8,6 +8,7 @@ import {
 import LoginPage from "./authPages/LoginPage/LoginPage";
 import RegisterPage from "./authPages/RegisterPage/RegisterPage";
 import Dashboard from "./Dashboard/Dashboard";
+import CitedVersionPage from "./pages/CitedVersionPage";
 import { ThemeProvider } from "./shared/context/ThemeContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -27,6 +28,11 @@ function App() {
           </Route>
           <Route exact path="/dashboard">
             <Dashboard />
+          </Route>
+          {/* Public. Must sit above the catch-all redirect, or a reader
+              following a citation would be bounced to the login page. */}
+          <Route exact path="/v/:versionId">
+            <CitedVersionPage />
           </Route>
           <Route path="/">
             <Redirect to="/dashboard" />

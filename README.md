@@ -37,6 +37,7 @@ file sharing inside a room.
 | **Rich text documents** | A TipTap editor for papers and notes, on the same CRDT transport and the same version model as code. Prose is stored as Markdown, so diffs, merges and conflict blocks stay readable — and the work can leave in a format that outlives the tool. |
 | **Branches and merges** | Branch from any version and merge back with a real three-way merge — the common ancestor is found by walking the version DAG, non-overlapping edits from both sides are kept, and overlapping ones become labelled conflict blocks rather than a silent winner. |
 | **Version diffs** | Any two versions rendered side by side via `react-diff-viewer`. |
+| **Citable versions** | Publish any version to a stable public URL with a plain-text reference, a BibTeX entry, and a sha256 of the content so a reader can verify the text is what was cited. Off by default — a version is unreachable without an account until an author publishes it. |
 | **Inline comments** | Comments anchored to a position in a specific version, so review feedback stays attached to the text it refers to. |
 | **File sharing** | Upload files into a room; they appear in the room's file list alongside its messages. Downloads go through an authenticated route that checks an access list captured at upload time — nothing is served from a public path. |
 

@@ -6,7 +6,7 @@ import CollaborationCaret from "@tiptap/extension-collaboration-caret";
 import { Rnd } from "react-rnd";
 import { connectCollabSession } from "../utils/collabSession";
 import { htmlToMarkdown, markdownToHtml, hasConflictMarkers } from "../utils/prose";
-import { saveCodeVersion, getCodeHistory, getCodeVersion } from "../../api";
+import { saveCodeVersion, getCodeHistory, getCodeVersion, setVersionCitable } from "../../api";
 import { notifySuccess, notifyError, notifyWarning } from "../utils/notification";
 
 /**
@@ -121,6 +121,24 @@ const ProseEditorPanel = ({ open, onClose, filename, sessionId, user, branch = "
     }
   };
 
+  // Publishing is explicit and per-version. Until an author does this, a
+  // version is unreachable without an account.
+  const handleCite = async (version) => {
+    const res = await setVersionCitable(version._id, !version.citable);
+    if (res?.error) return notifyError(res.error);
+    loadHistory();
+    if (res.citable && res.citation?.url) {
+      try {
+        await navigator.clipboard.writeText(res.citation.text);
+        notifySuccess("Published. Reference copied to your clipboard.");
+      } catch {
+        notifySuccess(`Published at ${res.citation.url}`);
+      }
+    } else {
+      notifyWarning("Unpublished. The link no longer resolves.");
+    }
+  };
+
   const handleRestore = async (versionId) => {
     const v = await getCodeVersion(versionId);
     if (v?.error || !editor) return notifyError("Could not load that version.");
@@ -186,7 +204,18 @@ const ProseEditorPanel = ({ open, onClose, filename, sessionId, user, branch = "
                   {new Date(v.timestamp).toLocaleString()} · {v.username} · {v.branch}
                   {v.hasConflicts && <span style={{ color: "#ff9b9b" }}> · {v.conflictCount} conflict(s)</span>}
                 </span>
-                <button onClick={() => handleRestore(v._id)} style={{ ...btn, fontSize: 12 }}>Load</button>
+                <span>
+                  <button
+                    onClick={() => handleCite(v)}
+                    title={v.citable ? "Published — click to unpublish" : "Publish so this version can be cited"}
+                    style={{ ...btn, fontSize: 12, marginRight: 6,
+                             borderColor: v.citable ? "#3ba55d" : "#4f545c",
+                             color: v.citable ? "#3ba55d" : "#dcddde" }}
+                  >
+                    {v.citable ? "Cited" : "Cite"}
+                  </button>
+                  <button onClick={() => handleRestore(v._id)} style={{ ...btn, fontSize: 12 }}>Load</button>
+                </span>
               </div>
             ))}
           </div>

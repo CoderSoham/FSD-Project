@@ -10,10 +10,13 @@ const authRoutes = require("./routes/authRoutes");
 const friendInvitationRoutes = require("./routes/friendInvitationRoutes");
 const fileRoutes = require("./routes/fileRoutes");
 const codeRoutes = require("./routes/codeRoutes");
+const publicRoutes = require("./routes/publicRoutes");
 
 const PORT = process.env.PORT || process.env.API_PORT || 5002;
 
 const app = express();
+// Used to build absolute citation URLs; a citation with a localhost link is useless.
+app.set("publicBaseUrl", process.env.PUBLIC_BASE_URL || "https://fsd-project-mu.vercel.app");
 app.use(cors({
   origin: 'http://localhost:3000',
   credentials: true, 
@@ -29,6 +32,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/friend-invitation", friendInvitationRoutes);
 app.use("/api/files", fileRoutes);
 app.use("/api/code", codeRoutes);
+app.use("/api/public", publicRoutes);
 // Uploads are NOT served statically. They are research documents; a static
 // mount hands them to anyone who learns a filename. Every fetch goes through
 // GET /api/files/:fileId/download, which checks the file's access list.

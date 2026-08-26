@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "node tests/codeCollab.convergence.test.js && node tests/merge.test.js && node tests/fileAccess.test.js && node tests/prose.test.js",
+    "test": "node tests/codeCollab.convergence.test.js && node tests/merge.test.js && node tests/fileAccess.test.js && node tests/prose.test.js && node tests/citation.test.js",
     "start": "nodemon server.js"
   },
   "author": "",

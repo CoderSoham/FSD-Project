@@ -2,6 +2,7 @@ const CodeVersion = require('../models/codeVersion');
 const resolveIdentity = require('../middleware/identity');
 const { threeWayMerge } = require('../utils/threeWayMerge');
 const { findCommonAncestor, tipOf } = require('../utils/versionGraph');
+const { hashContent, formatCitation } = require('../utils/citation');
 
 // POST /api/code/save
 const saveCodeVersion = async (req, res) => {
@@ -20,6 +21,7 @@ const saveCodeVersion = async (req, res) => {
     docType: docType || 'code',
     language,
     content,
+    contentHash: hashContent(content),
     userId,
     username,
     parentVersionId: parentVersionId || null,
@@ -59,6 +61,7 @@ const createBranch = async (req, res) => {
     docType: fromVersion.docType,
     language: fromVersion.language,
     content: fromVersion.content,
+    contentHash: hashContent(fromVersion.content),
     userId: fromVersion.userId,
     username: fromVersion.username,
     parentVersionId: fromVersionId,
@@ -107,6 +110,7 @@ const mergeBranches = async (req, res) => {
     docType: sourceVersion.docType,
     language: sourceVersion.language,
     content,
+    contentHash: hashContent(content),
     userId,
     username,
     parentVersionId: targetVersion._id,
@@ -125,7 +129,68 @@ const mergeBranches = async (req, res) => {
   });
 };
 
+// POST /api/code/version/:versionId/cite   { citable: true|false }
+// Publishing is an explicit act. A version is private until an author decides
+// otherwise -- the same rule as file access: durable artefacts carry their own
+// permission rather than inheriting it from a room that no longer exists.
+const setCitable = async (req, res) => {
+  const { versionId } = req.params;
+  const { citable } = req.body;
+  if (!/^[0-9a-fA-F]{24}$/.test(versionId)) return res.status(404).json({ error: 'Not found' });
+
+  const version = await CodeVersion.findById(versionId);
+  if (!version) return res.status(404).json({ error: 'Not found' });
+
+  const { userId } = await resolveIdentity(req);
+  if (String(version.userId) !== String(userId)) {
+    return res.status(403).json({ error: 'Only the author of a version can publish it' });
+  }
+  if (version.hasConflicts && citable) {
+    return res.status(400).json({ error: 'Resolve the merge conflicts before citing this version' });
+  }
+
+  version.citable = Boolean(citable);
+  version.citedAt = version.citable ? new Date() : null;
+  if (!version.contentHash) version.contentHash = hashContent(version.content);
+  await version.save();
+
+  res.json({
+    ...version.toObject(),
+    citation: version.citable ? formatCitation(version, req.app.get('publicBaseUrl')) : null,
+  });
+};
+
+// GET /api/code/version/:versionId/citation  (authenticated preview)
+const getCitation = async (req, res) => {
+  const { versionId } = req.params;
+  if (!/^[0-9a-fA-F]{24}$/.test(versionId)) return res.status(404).json({ error: 'Not found' });
+  const version = await CodeVersion.findById(versionId);
+  if (!version) return res.status(404).json({ error: 'Not found' });
+  if (!version.contentHash) version.contentHash = hashContent(version.content);
+  res.json(formatCitation(version, req.app.get('publicBaseUrl')));
+};
+
+// GET /api/public/versions/:versionId   -- no authentication
+// Serves only versions an author published. Everything else 404s, including
+// versions that exist but are private: confirming existence is a disclosure.
+const getPublicVersion = async (req, res) => {
+  const { versionId } = req.params;
+  if (!/^[0-9a-fA-F]{24}$/.test(versionId)) return res.status(404).json({ error: 'Not found' });
+
+  const version = await CodeVersion.findOne({ _id: versionId, citable: true })
+    .select('filename docType language content username branch timestamp contentHash citedAt');
+  if (!version) return res.status(404).json({ error: 'Not found' });
+
+  res.json({
+    ...version.toObject(),
+    citation: formatCitation(version, req.app.get('publicBaseUrl')),
+  });
+};
+
 module.exports = {
+  setCitable,
+  getCitation,
+  getPublicVersion,
   saveCodeVersion,
   getCodeHistory,
   getCodeVersion,

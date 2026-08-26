@@ -116,6 +116,9 @@ keys. Generate the JWT secret with `openssl rand -base64 48`. Then:
 npm start
 ```
 
+Run the tests with `npm test` in `backend/`. The integration suite downloads a
+MongoDB binary on first run and skips itself if that is unavailable.
+
 **Frontend**, in a second terminal:
 
 ```bash
@@ -140,9 +143,10 @@ These are real and worth knowing before you judge the code:
 - **Recording is client-side and unencrypted.** RecordRTC captures the local
   stream and `file-saver` writes it to disk. There is no consent prompt for the
   other participants.
-- **Thin test coverage.** `npm test` covers collaborative-editing convergence,
-  the merge/DAG logic, and file access rules. The HTTP layer and sockets are
-  untested end to end.
+- **Sockets are untested end to end.** `npm test` runs six unit suites plus an
+  integration suite that boots the real Express app against an in-memory
+  MongoDB and drives the HTTP surface. The WebRTC and socket layers still have
+  no automated coverage.
 - **CORS is pinned to the deployed frontend origin** in `server.js`, so a local
   frontend talking to the deployed API will be rejected. Run both locally or
   both deployed.

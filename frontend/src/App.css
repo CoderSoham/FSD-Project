@@ -129,3 +129,110 @@ input:focus, .modern-input:focus {
     left: 0 !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Collaborative editing
+   --------------------------------------------------------------------------- */
+
+/* Remote carets. Without these rules the caret elements are still inserted in
+   the document but have no width and no background, so collaborators are
+   invisible and the editor looks single-user. This is functional, not
+   decorative. */
+.collaboration-carets__caret {
+  border-left: 1px solid #0d0d0d;
+  border-right: 1px solid #0d0d0d;
+  margin-left: -1px;
+  margin-right: -1px;
+  pointer-events: none;
+  position: relative;
+  word-break: normal;
+}
+
+.collaboration-carets__label {
+  border-radius: 3px 3px 3px 0;
+  color: #0d0d0d;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 600;
+  left: -1px;
+  line-height: normal;
+  padding: 0.1rem 0.3rem;
+  position: absolute;
+  top: -1.4em;
+  user-select: none;
+  white-space: nowrap;
+}
+
+/* The label is distracting while someone is actively typing next to you, so it
+   fades out and comes back on hover. */
+.collaboration-carets__label {
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+.collaboration-carets__caret:hover .collaboration-carets__label,
+.ProseMirror:hover .collaboration-carets__label {
+  opacity: 1;
+}
+
+/* ---------------------------------------------------------------------------
+   Prose editor and the read-only cited view
+   --------------------------------------------------------------------------- */
+
+.prose-editor,
+.prose-readonly {
+  font-family: Inter, -apple-system, system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+  color: #dcddde;
+  outline: none;
+  max-width: 68ch; /* a comfortable measure -- this is prose, not a terminal */
+}
+
+.prose-editor h1, .prose-readonly h1 { font-size: 1.9em; margin: 1.2em 0 0.4em; line-height: 1.25; }
+.prose-editor h2, .prose-readonly h2 { font-size: 1.45em; margin: 1.4em 0 0.4em; line-height: 1.3; }
+.prose-editor h3, .prose-readonly h3 { font-size: 1.2em; margin: 1.3em 0 0.3em; }
+.prose-editor h1:first-child, .prose-readonly h1:first-child { margin-top: 0; }
+
+.prose-editor p, .prose-readonly p { margin: 0 0 1em; }
+.prose-editor ul, .prose-editor ol,
+.prose-readonly ul, .prose-readonly ol { padding-left: 1.4em; margin: 0 0 1em; }
+.prose-editor li, .prose-readonly li { margin-bottom: 0.3em; }
+
+.prose-editor blockquote, .prose-readonly blockquote {
+  border-left: 3px solid #4f545c;
+  margin: 0 0 1em;
+  padding: 0.2em 0 0.2em 1em;
+  color: #b9bbbe;
+}
+
+.prose-editor code, .prose-readonly code {
+  background: #2b2d31;
+  border-radius: 3px;
+  padding: 0.1em 0.35em;
+  font-size: 0.9em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.prose-editor pre, .prose-readonly pre {
+  background: #2b2d31;
+  border-radius: 6px;
+  padding: 0.9em 1em;
+  overflow-x: auto;
+  margin: 0 0 1em;
+}
+.prose-editor pre code, .prose-readonly pre code { background: none; padding: 0; }
+
+.prose-editor a, .prose-readonly a { color: #00a8fc; }
+
+/* An empty document should say what to do rather than sit there blank. */
+.prose-editor p.is-editor-empty:first-child::before {
+  color: #72767d;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Merge conflict markers are easy to miss in running prose. */
+.prose-editor p:has(> code:only-child),
+.prose-readonly p:has(> code:only-child) { margin-bottom: 0.6em; }

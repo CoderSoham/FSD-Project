@@ -27,3 +27,8 @@ npm-debug.log*
 # user-uploaded files — research documents must never land in git
 backend/uploads/
 uploads/
+
+# Local assistant configuration. Machine specific and not part of the project.
+CLAUDE.md
+.mcp.json
+.claude/

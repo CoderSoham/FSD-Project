@@ -3,7 +3,6 @@ import {
   setOpenRoom,
   setRoomDetails,
   setActiveRooms,
-  setLocalStream,
   setRemoteStreams,
   setScreenSharingStream,
   setIsUserJoinedOnlyWithAudio,
@@ -11,8 +10,6 @@ import {
 import * as socketConnection from "./socketConnection";
 import * as webRTCHandler from "./webRTCHandler";
 
-// Import your signaling server URL here if needed
-const SIGNALING_SERVER_URL = "http://YOUR_SIGNALING_SERVER_URL"; // Replace with your signaling server URL
 
 export const createNewRoom = () => {
   const successCalbackFunc = () => {

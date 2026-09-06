@@ -1,14 +1,13 @@
-import React, { useState } from "react";
+import React from "react";
 import Button from "@mui/material/Button";
 import AddIcon from "@mui/icons-material/Add";
 import * as roomHandler from "../../realtimeCommunication/roomHandler";
 
 const CreateRoomButton = ({ isUserInRoom, userId }) => {
-  const [roomId, setRoomId] = useState(null); // State to hold the room ID
 
   const createNewRoomHandler = async () => {
-    const newRoomId = await roomHandler.createNewRoom(); // Assuming this function returns a new room ID
-    setRoomId(newRoomId); // Set the room ID
+    // createNewRoom drives the room through redux; there is nothing to hold here.
+    await roomHandler.createNewRoom();
   };
 
   return (

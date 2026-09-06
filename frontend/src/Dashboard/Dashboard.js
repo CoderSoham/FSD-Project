@@ -26,6 +26,8 @@ const Dashboard = ({ setUserDetails, isUserInRoom }) => {
       setUserDetails(JSON.parse(userDetails));
       connectWithSocketServer(JSON.parse(userDetails));
     }
+    // Runs once on mount. Re-running it would open a second socket connection.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

@@ -1,0 +1,167 @@
+/* The code editor panel.
+
+   The layout is deliberately split into three bands: file level controls,
+   branch level controls, then the editor. Everything used to sit in one row in
+   the header, with each button given its own colour, so nothing indicated what
+   the main action was. Saving a version is the only primary button here. */
+
+.code-panel { font-size: var(--text-sm); }
+
+.code-panel__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* A vertical rule between groups of controls, so related things read as
+   related without needing boxes around them. */
+.toolbar__sep {
+  width: 1px;
+  height: 18px;
+  background: var(--border);
+  margin: 0 var(--space-1);
+  flex: none;
+}
+
+.code-panel__filename { width: 160px; }
+.code-panel__newbranch { width: 140px; }
+.code-panel__label { font-size: var(--text-xs); padding-right: var(--space-1); }
+
+.code-panel__branches { background: var(--surface-sunken); }
+
+.code-panel__main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.code-panel__editor {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-raised);
+}
+
+/* Side panels. Fixed width so the editor does not resize as they open and
+   close, which is disorienting while you are reading code. */
+.code-panel__history,
+.code-panel__comments {
+  width: 240px;
+  flex: none;
+  overflow-y: auto;
+  background: var(--surface);
+  font-size: var(--text-xs);
+}
+.code-panel__history { border-right: 1px solid var(--border); }
+.code-panel__comments { border-left: 1px solid var(--border); }
+
+.code-panel__history-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-subtle);
+}
+
+.code-panel__version,
+.code-panel__comment {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* The current version gets a marker on its leading edge rather than a fill, so
+   the list still reads as one list. */
+.code-panel__version--current {
+  box-shadow: inset 2px 0 0 var(--accent);
+  background: var(--accent-quiet);
+}
+
+.code-panel__version-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  width: 100%;
+  font-weight: var(--weight-medium);
+  color: var(--text);
+}
+
+.code-panel__diff {
+  height: 100%;
+  overflow: auto;
+  background: var(--surface-raised);
+}
+
+.code-panel__diff-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* Inline comment composer, anchored over the editor. */
+.code-panel__comment-box {
+  position: absolute;
+  top: 96px;
+  right: var(--space-4);
+  z-index: 2;
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+
+.code-panel__comment-input {
+  height: auto;
+  padding: var(--space-2);
+  font-family: inherit;
+  resize: vertical;
+}
+
+.code-panel__comment-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+/* Monaco paints its own background. Let the panel show through so the editor
+   sits on the same surface as everything around it. */
+.code-panel__editor .monaco-editor,
+.code-panel__editor .monaco-editor-background,
+.code-panel__editor .monaco-editor .margin {
+  background-color: var(--surface-raised) !important;
+}
+
+.inline-comment-highlight {
+  background: var(--warning-quiet);
+  border-bottom: 1px dashed var(--warning);
+}
+
+@media (max-width: 860px) {
+  .code-panel__history, .code-panel__comments { display: none; }
+}

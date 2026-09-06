@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { styled } from "@mui/system";
-import RecordRTC, { RecordRTCPromisesHandler } from "recordrtc";
 import { saveAs } from "file-saver";
 
 import CameraButton from "./CameraButton";
@@ -10,6 +9,7 @@ import ScreenShareButton from "./ScreenShareButton";
 import { connect } from "react-redux";
 import { getActions } from "../../../store/actions/roomActions";
 import store from "../../../store/store";
+import { RecordRTCPromisesHandler } from "recordrtc";
 
 let VIDEO_BLOB = "";
 

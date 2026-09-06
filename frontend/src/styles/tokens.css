@@ -1,0 +1,174 @@
+/* =============================================================================
+   Design tokens
+   =============================================================================
+
+   Every colour, space, radius and type size in the app comes from here.
+
+   The rule is simple and it is not negotiable: components never write a hex
+   value. Before this file existed there were around seventy hardcoded colours
+   spread across twenty-two components, and because they were all dark theme
+   values, switching to light mode left half the app dark. Fixing that one
+   component at a time would have meant fixing it again next month.
+
+   Both themes are defined in full. Neither is a set of overrides on top of the
+   other, so neither can be half finished.
+
+   Naming is by role, not by appearance. --surface-raised, not --grey-800. A
+   role survives a palette change; a colour name does not.
+   ============================================================================= */
+
+:root {
+  /* --- Surfaces, from furthest back to closest to the reader ------------- */
+  --bg:              #f7f8fa;  /* the page behind everything */
+  --surface:         #ffffff;  /* cards, panels, the main content plane */
+  --surface-raised:  #ffffff;  /* things floating above the surface */
+  --surface-sunken:  #eef0f4;  /* wells, inputs, code blocks */
+  --surface-hover:   #f0f2f6;
+  --surface-active:  #e6e9ef;
+
+  /* --- Text, from most to least important ------------------------------- */
+  --text:            #16181d;  /* body and headings */
+  --text-muted:      #5b6270;  /* secondary information */
+  --text-subtle:     #868d9b;  /* timestamps, hints, placeholders */
+  --text-on-accent:  #ffffff;
+
+  /* --- Lines ------------------------------------------------------------ */
+  --border:          #e2e5eb;  /* the default separator */
+  --border-strong:   #cfd4dd;  /* when a border needs to be seen */
+  --border-subtle:   #edeff3;
+
+  /* --- Accent ----------------------------------------------------------- */
+  --accent:          #4f46e5;
+  --accent-hover:    #4338ca;
+  --accent-active:   #3730a3;
+  --accent-quiet:    #eef2ff;  /* a background that carries accent meaning */
+  --accent-text:     #4338ca;  /* accent as readable text on --bg */
+
+  /* --- Status. Each has a solid, a quiet background, and a readable text - */
+  --success:         #15803d;
+  --success-quiet:   #dcfce7;
+  --success-text:    #15803d;
+
+  --warning:         #b45309;
+  --warning-quiet:   #fef3c7;
+  --warning-text:    #92400e;
+
+  --danger:          #dc2626;
+  --danger-hover:    #b91c1c;
+  --danger-quiet:    #fee2e2;
+  --danger-text:     #b91c1c;
+
+  /* --- Focus. One ring, used everywhere, always visible ------------------ */
+  --focus-ring:      0 0 0 3px rgba(79, 70, 229, 0.35);
+
+  /* --- Elevation. Light theme can afford real shadows -------------------- */
+  --shadow-sm:  0 1px 2px rgba(16, 18, 24, 0.06);
+  --shadow-md:  0 4px 12px rgba(16, 18, 24, 0.08);
+  --shadow-lg:  0 12px 32px rgba(16, 18, 24, 0.12);
+
+  /* --- Collaborator cursor labels need dark text on a bright colour ------ */
+  --caret-label-text: #16181d;
+}
+
+[data-theme="dark"] {
+  --bg:              #0f1115;
+  --surface:         #16181d;
+  --surface-raised:  #1c1f26;
+  --surface-sunken:  #101216;
+  --surface-hover:   #21242c;
+  --surface-active:  #282c35;
+
+  --text:            #e8eaed;
+  --text-muted:      #a2a9b6;
+  --text-subtle:     #737b8a;
+  --text-on-accent:  #ffffff;
+
+  --border:          #262a33;
+  --border-strong:   #363b46;
+  --border-subtle:   #1e2128;
+
+  --accent:          #6366f1;
+  --accent-hover:    #7679f3;
+  --accent-active:   #818cf8;
+  --accent-quiet:    #1e1b3a;
+  --accent-text:     #a5b4fc;
+
+  --success:         #22c55e;
+  --success-quiet:   #0f2a1a;
+  --success-text:    #4ade80;
+
+  --warning:         #f59e0b;
+  --warning-quiet:   #2c1f08;
+  --warning-text:    #fbbf24;
+
+  --danger:          #ef4444;
+  --danger-hover:    #f87171;
+  --danger-quiet:    #2c1315;
+  --danger-text:     #fca5a5;
+
+  --focus-ring:      0 0 0 3px rgba(99, 102, 241, 0.45);
+
+  /* Shadows read as mud on a dark background. Depth comes from the surface
+     ramp and borders instead, so these stay very restrained. */
+  --shadow-sm:  0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md:  0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-lg:  0 16px 40px rgba(0, 0, 0, 0.55);
+
+  --caret-label-text: #0f1115;
+}
+
+/* =============================================================================
+   Scale
+   Theme independent. Spacing and type do not change between light and dark.
+   ============================================================================= */
+
+:root {
+  /* 4px grid. Everything that has a gap uses one of these. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 999px;
+
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo,
+               Consolas, monospace;
+
+  /* A restrained type scale. Five sizes is enough for an application. */
+  --text-xs:   12px;
+  --text-sm:   13px;
+  --text-base: 14px;
+  --text-md:   16px;
+  --text-lg:   20px;
+  --text-xl:   26px;
+
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.7;
+
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  /* One duration and one curve, so motion feels like one system. */
+  --duration: 140ms;
+  --ease: cubic-bezier(0.2, 0, 0.2, 1);
+
+  --z-panel: 1200;
+  --z-modal: 1300;
+  --z-toast: 1400;
+}
+
+/* Someone who has asked their system to reduce motion means it. */
+@media (prefers-reduced-motion: reduce) {
+  :root { --duration: 0ms; }
+}

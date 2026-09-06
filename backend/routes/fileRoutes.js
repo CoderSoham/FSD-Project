@@ -1,3 +1,4 @@
+const asyncHandler = require('../middleware/asyncHandler');
 const express = require('express');
 const auth = require('../middleware/auth');
 const multer = require('multer');
@@ -20,11 +21,11 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // POST /api/files/upload
-router.post('/upload', auth, upload.single('file'), uploadFile);
+router.post('/upload', auth, upload.single('file'), asyncHandler(uploadFile));
 
-router.get('/:fileId/download', auth, downloadFile);
-router.get('/room/:roomId', auth, getRoomFiles);
-router.get('/room/:roomId/messages', auth, getRoomMessages);
-router.post('/room/:roomId/messages', auth, postRoomMessage);
+router.get('/:fileId/download', auth, asyncHandler(downloadFile));
+router.get('/room/:roomId', auth, asyncHandler(getRoomFiles));
+router.get('/room/:roomId/messages', auth, asyncHandler(getRoomMessages));
+router.post('/room/:roomId/messages', auth, asyncHandler(postRoomMessage));
 
 module.exports = router; 

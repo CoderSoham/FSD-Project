@@ -11,6 +11,7 @@ const friendInvitationRoutes = require("./routes/friendInvitationRoutes");
 const fileRoutes = require("./routes/fileRoutes");
 const codeRoutes = require("./routes/codeRoutes");
 const publicRoutes = require("./routes/publicRoutes");
+const errorHandler = require("./middleware/errorHandler");
 
 const PORT = process.env.PORT || process.env.API_PORT || 5002;
 
@@ -22,7 +23,9 @@ app.use(cors({
   credentials: true, 
 }));
 
-app.use(express.json());
+// Documents travel in the body, so the default 100kb is too small, but it
+// still needs a ceiling. Anything over this returns a sentence, not a stack.
+app.use(express.json({ limit: '2mb' }));
 
 app.get('/', (req, res) => {
   res.send('Server is running!');
@@ -49,6 +52,9 @@ app.use("/api/friend-invitation", friendInvitationRoutes);
 app.use("/api/files", fileRoutes);
 app.use("/api/code", codeRoutes);
 app.use("/api/public", publicRoutes);
+
+// Must be last. Everything above hands its failures here.
+app.use(errorHandler);
 // Uploads are NOT served statically. They are research documents; a static
 // mount hands them to anyone who learns a filename. Every fetch goes through
 // GET /api/files/:fileId/download, which checks the file's access list.

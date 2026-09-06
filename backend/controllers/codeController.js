@@ -3,13 +3,18 @@ const resolveIdentity = require('../middleware/identity');
 const { threeWayMerge } = require('../utils/threeWayMerge');
 const { findCommonAncestor, tipOf } = require('../utils/versionGraph');
 const { hashContent, formatCitation } = require('../utils/citation');
+const { isObjectId, cleanBranchName } = require('../utils/validate');
 const { buildFastImportStream } = require('../utils/gitExport');
 
 // POST /api/code/save
 const saveCodeVersion = async (req, res) => {
-  const { filename, language, content, parentVersionId, docType, branch } = req.body;
+  const { filename, language, content, parentVersionId, docType } = req.body;
+  const branch = cleanBranchName(req.body.branch) || 'main';
   if (!filename || !language || !content) {
-    return res.status(400).json({ error: 'Missing required fields' });
+    return res.status(400).json({ error: 'filename, language and content are required' });
+  }
+  if (parentVersionId && !isObjectId(parentVersionId)) {
+    return res.status(400).json({ error: 'parentVersionId is not a valid id' });
   }
   if (docType && !['code', 'prose'].includes(docType)) {
     return res.status(400).json({ error: 'docType must be code or prose' });
@@ -26,7 +31,7 @@ const saveCodeVersion = async (req, res) => {
     userId,
     username,
     parentVersionId: parentVersionId || null,
-    branch: branch || 'main',
+    branch,
   });
   res.status(201).json(version);
 };
@@ -44,6 +49,7 @@ const getCodeHistory = async (req, res) => {
 // GET /api/code/version/:versionId
 const getCodeVersion = async (req, res) => {
   const { versionId } = req.params;
+  if (!isObjectId(versionId)) return res.status(400).json({ error: 'Not a valid version id' });
   const version = await CodeVersion.findById(versionId);
   if (!version) return res.status(404).json({ error: 'Version not found' });
   res.json(version);
@@ -51,10 +57,23 @@ const getCodeVersion = async (req, res) => {
 
 // POST /api/code/branch
 const createBranch = async (req, res) => {
-  const { filename, branch, fromVersionId } = req.body;
+  const { filename, fromVersionId } = req.body;
+  const branch = cleanBranchName(req.body.branch);
   if (!filename || !branch || !fromVersionId) {
-    return res.status(400).json({ error: 'Missing required fields' });
+    return res.status(400).json({ error: 'filename, a non-blank branch name, and fromVersionId are required' });
   }
+  if (!isObjectId(fromVersionId)) {
+    return res.status(400).json({ error: 'fromVersionId is not a valid id' });
+  }
+
+  // Without this, branching onto a name that already exists quietly appends a
+  // version to that branch instead of starting a new one. The user asked for
+  // something new and got someone else's history rewritten.
+  const clash = await CodeVersion.exists({ filename, branch });
+  if (clash) {
+    return res.status(409).json({ error: `Branch '${branch}' already exists for this document` });
+  }
+
   const fromVersion = await CodeVersion.findById(fromVersionId);
   if (!fromVersion) return res.status(404).json({ error: 'Base version not found' });
   const newVersion = await CodeVersion.create({
@@ -137,7 +156,7 @@ const mergeBranches = async (req, res) => {
 const setCitable = async (req, res) => {
   const { versionId } = req.params;
   const { citable } = req.body;
-  if (!/^[0-9a-fA-F]{24}$/.test(versionId)) return res.status(404).json({ error: 'Not found' });
+  if (!isObjectId(versionId)) return res.status(404).json({ error: 'Not found' });
 
   const version = await CodeVersion.findById(versionId);
   if (!version) return res.status(404).json({ error: 'Not found' });
@@ -164,7 +183,7 @@ const setCitable = async (req, res) => {
 // GET /api/code/version/:versionId/citation  (authenticated preview)
 const getCitation = async (req, res) => {
   const { versionId } = req.params;
-  if (!/^[0-9a-fA-F]{24}$/.test(versionId)) return res.status(404).json({ error: 'Not found' });
+  if (!isObjectId(versionId)) return res.status(404).json({ error: 'Not found' });
   const version = await CodeVersion.findById(versionId);
   if (!version) return res.status(404).json({ error: 'Not found' });
   if (!version.contentHash) version.contentHash = hashContent(version.content);
@@ -176,7 +195,7 @@ const getCitation = async (req, res) => {
 // versions that exist but are private: confirming existence is a disclosure.
 const getPublicVersion = async (req, res) => {
   const { versionId } = req.params;
-  if (!/^[0-9a-fA-F]{24}$/.test(versionId)) return res.status(404).json({ error: 'Not found' });
+  if (!isObjectId(versionId)) return res.status(404).json({ error: 'Not found' });
 
   const version = await CodeVersion.findOne({ _id: versionId, citable: true })
     .select('filename docType language content username branch timestamp contentHash citedAt');

@@ -1,3 +1,4 @@
+const asyncHandler = require('../middleware/asyncHandler');
 const express = require('express');
 const { getPublicVersion } = require('../controllers/codeController');
 
@@ -13,6 +14,6 @@ const { getPublicVersion } = require('../controllers/codeController');
  */
 const router = express.Router();
 
-router.get('/versions/:versionId', getPublicVersion);
+router.get('/versions/:versionId', asyncHandler(getPublicVersion));
 
 module.exports = router;

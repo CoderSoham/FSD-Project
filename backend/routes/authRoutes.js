@@ -1,3 +1,4 @@
+const asyncHandler = require('../middleware/asyncHandler');
 const express = require("express");
 const router = express.Router();
 const authControllers = require("../controllers/auth/authControllers");
@@ -23,18 +24,10 @@ const loginSchema = Joi.object({
   mail: Joi.string().email().required(),
 });
 
-router.post(
-  "/register",
-  validator.body(registerSchema),
-  authControllers.controllers.postRegister
-);
-router.post(
-  "/login",
-  validator.body(loginSchema),
-  authControllers.controllers.postLogin
-);
+router.post("/register", validator.body(registerSchema), asyncHandler(authControllers.controllers.postRegister));
+router.post("/login", validator.body(loginSchema), asyncHandler(authControllers.controllers.postLogin));
 
-// test route to verify if our middleware is working
+// Smoke route: confirms the auth middleware is wired up.
 router.get("/test", auth, (req, res) => {
   res.send("request passed");
 });

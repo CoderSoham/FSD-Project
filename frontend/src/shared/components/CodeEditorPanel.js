@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useMemo } from "react";
 import MonacoEditor, { loader } from "@monaco-editor/react";
 import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
 
@@ -37,6 +37,7 @@ const maxPanelHeight = window.innerHeight - 32;
 const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange, sessionId }) => {
   const fileInputRef = useRef();
   const [filename, setFilename] = useState("code.js");
+
   const [history, setHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
   const [diffView, setDiffView] = useState(null); // { oldVersion, newVersion }
@@ -44,11 +45,36 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
   const [saving, setSaving] = useState(false);
   const [branches, setBranches] = useState(["main"]);
   const [currentBranch, setCurrentBranch] = useState("main");
+  /**
+   * Which shared document this editor is bound to.
+   *
+   * AppBar renders this panel without a sessionId, and the effect that opens
+   * the collaborative session bailed out when it was undefined. So the CRDT was
+   * wired up, tested and never actually connected to anything from the UI.
+   *
+   * Deriving it from the document and branch means two people who open the same
+   * file are in the same session, which is the behaviour a reader would expect
+   * and the only one that makes the feature useful.
+   */
+  const collabSessionId = sessionId || `doc:${filename}:${currentBranch}`;
   const [newBranchName, setNewBranchName] = useState("");
   const [mergeSource, setMergeSource] = useState("");
   const [compareBranch, setCompareBranch] = useState("");
   const [compareDiff, setCompareDiff] = useState(null); // { oldContent, newContent, oldBranch, newBranch }
-  const user = JSON.parse(localStorage.getItem("user") || '{}');
+  /**
+   * The signed in user.
+   *
+   * Parsed once. This used to be parsed inline on every render, which produced
+   * a new object identity each time. It sits in the dependency array of the
+   * effect that opens the collaborative session, so every render tore the Yjs
+   * session and the Monaco binding down and built them again. Since typing
+   * causes a render, the binding was destroyed on every keystroke and the
+   * document was wiped before a single character could be committed to it.
+   */
+  const user = useMemo(() => {
+    try { return JSON.parse(localStorage.getItem("user") || "{}"); }
+    catch { return {}; }
+  }, []);
   const [comments, setComments] = useState([]);
   const [commentInput, setCommentInput] = useState("");
   const [commentPos, setCommentPos] = useState(null); // {startLine, startColumn, endLine, endColumn}
@@ -83,8 +109,8 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
   // onChange plumbing here at all -- the CRDT owns the document text and the
   // binding applies remote edits directly to the model.
   useEffect(() => {
-    if (!sessionId || !open || !editorReady || !editorRef.current) return;
-    const session = connectCollabSession({ sessionId, user });
+    if (!collabSessionId || !open || !editorReady || !editorRef.current) return;
+    const session = connectCollabSession({ sessionId: collabSessionId, user });
     if (!session) return;
 
     // The transport is shared with the prose editor; only the binding differs.
@@ -99,7 +125,7 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
       binding.destroy();
       session.destroy();
     };
-  }, [sessionId, open, editorReady, user]);
+  }, [collabSessionId, open, editorReady, user]);
 
   const fetchHistory = async () => {
     setLoadingHistory(true);
@@ -116,7 +142,7 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
   // Download code as file
   const handleDownload = () => {
     const lang = LANGUAGES.find(l => l.value === language) || LANGUAGES[0];
-    const blob = new Blob([value || ""], { type: "text/plain" });
+    const blob = new Blob([readContent()], { type: "text/plain" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -141,13 +167,28 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
   };
 
   // Save code version
+  /**
+   * The current text.
+   *
+   * Once a collaborative session is open, Yjs owns the buffer and the React
+   * `value` prop is stale the moment anyone types. Reading the model is the
+   * only answer that is true for both the shared and the solo case.
+   */
+  const readContent = () => {
+    try {
+      const fromEditor = editorRef.current?.getValue();
+      if (typeof fromEditor === "string") return fromEditor;
+    } catch (e) { /* editor not mounted yet */ }
+    return value || "";
+  };
+
   const handleSaveVersion = async () => {
     setSaving(true);
     const parentVersionId = history.length > 0 ? history[0]._id : null;
     const res = await saveCodeVersion({
       filename,
       language,
-      content: value,
+      content: readContent(),
       userId: user?._id || "anonymous",
       username: user?.username || "anonymous",
       parentVersionId,
@@ -280,6 +321,18 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
   const handleEditorMount = (editor, monaco) => {
     editorRef.current = editor;
     setEditorReady(true);
+
+    // Monaco measures its container when it mounts. Inside this panel it
+    // sometimes measures before flex has resolved and settles at 5x5 pixels,
+    // and automaticLayout's observer never fires afterwards because the
+    // container itself never changes size. Two frames later the layout is
+    // real, so ask it to measure again.
+    const relayout = () => { try { editor.layout(); } catch (e) { /* disposed */ } };
+    requestAnimationFrame(() => requestAnimationFrame(relayout));
+    // rAF does not fire in a tab that is not compositing, so do not rely on it
+    // alone.
+    setTimeout(relayout, 60);
+    setTimeout(relayout, 300);
     editor.onMouseDown(e => {
       if (e.target.type === monaco.editor.MouseTargetType.CONTENT_TEXT) {
         const sel = editor.getSelection();
@@ -342,6 +395,9 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
       onResizeStop={(e, direction, ref, delta, position) => {
         setPanelSize({ width: ref.offsetWidth, height: ref.offsetHeight });
         setPanelPos(position);
+        requestAnimationFrame(() => {
+          try { editorRef.current?.layout(); } catch (err) { /* disposed */ }
+        });
       }}
       style={{ zIndex: "var(--z-panel)" }}
     >
@@ -583,7 +639,10 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
               <MonacoEditor
                 height="100%"
                 language={language}
-                value={value}
+                // Uncontrolled on purpose. Yjs writes directly to this model,
+                // and a controlled `value` fights it: React resets the buffer
+                // on every render and typed characters disappear.
+                defaultValue={value}
                 theme={isDark() ? "vs-dark" : "light"}
                 onChange={onChange}
                 onMount={handleEditorMount}

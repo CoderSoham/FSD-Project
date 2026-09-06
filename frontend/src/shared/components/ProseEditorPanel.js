@@ -151,70 +151,79 @@ const ProseEditorPanel = ({ open, onClose, filename, sessionId, user, branch = "
 
   return (
     <Rnd
-      default={{ x: 120, y: 80, width: 760, height: 560 }}
-      minWidth={420}
-      minHeight={320}
+      default={{ x: 120, y: 80, width: 780, height: 580 }}
+      minWidth={440}
+      minHeight={340}
       bounds="window"
-      style={{ zIndex: 1300 }}
+      dragHandleClassName="panel__header"
+      style={{ zIndex: "var(--z-panel)" }}
     >
-      <div style={{
-        display: "flex", flexDirection: "column", height: "100%",
-        background: "#2f3136", color: "#dcddde", borderRadius: 8,
-        border: "1px solid #202225", overflow: "hidden",
-      }}>
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "8px 12px", borderBottom: "1px solid #202225", cursor: "move",
-        }}>
-          <strong>{filename || "Untitled"} · {branch}</strong>
-          <div>
-            <button onClick={handleSave} disabled={saving} style={btn}>
-              {saving ? "Saving…" : "Save version"}
-            </button>
-            <button onClick={onClose} style={{ ...btn, marginLeft: 8 }}>×</button>
+      <div className="panel">
+        <header className="panel__header">
+          <div className="panel__title">
+            <span>{filename || "Untitled"}</span>
+            <span className="panel__title-meta mono">{branch}</span>
           </div>
-        </div>
+          <div style={{ display: "flex", gap: "var(--space-2)" }}>
+            <button className="btn btn--primary" onClick={handleSave} disabled={saving}>
+              {saving ? "Saving" : "Save version"}
+            </button>
+            <button className="btn btn--ghost btn--icon" onClick={onClose} aria-label="Close">
+              &times;
+            </button>
+          </div>
+        </header>
 
-        <div style={{ display: "flex", gap: 4, padding: "6px 12px", borderBottom: "1px solid #202225", flexWrap: "wrap" }}>
+        <div className="panel__toolbar" role="toolbar" aria-label="Formatting">
           {TOOLBAR.map((t) => (
             <button
               key={t.label}
+              type="button"
               title={t.title}
+              aria-label={t.title}
+              aria-pressed={Boolean(editor && t.active(editor))}
               onClick={() => editor && t.run(editor)}
               disabled={!editor}
-              style={{ ...btn, background: editor && t.active(editor) ? "#5865f2" : "transparent", minWidth: 32 }}
+              className={`btn btn--sm btn--icon ${editor && t.active(editor) ? "btn--on" : "btn--ghost"}`}
             >
               {t.label}
             </button>
           ))}
         </div>
 
-        <div style={{ flex: 1, overflow: "auto", padding: 16, background: "#36393f" }}>
+        <div className="panel__body" style={{ padding: "var(--space-5)" }}>
           {editor
             ? <EditorContent editor={editor} />
-            : <div style={{ opacity: 0.6 }}>Connecting to the shared document…</div>}
+            : <div className="empty-state">Connecting to the shared document</div>}
         </div>
 
         {history.length > 0 && (
-          <div style={{ borderTop: "1px solid #202225", padding: "8px 12px", maxHeight: 130, overflow: "auto" }}>
-            <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 4 }}>Saved versions</div>
+          <div className="panel__footer">
+            <div className="subtle" style={{ fontSize: "var(--text-xs)", marginBottom: "var(--space-2)" }}>
+              Saved versions
+            </div>
             {history.map((v) => (
-              <div key={v._id} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, padding: "2px 0" }}>
-                <span>
-                  {new Date(v.timestamp).toLocaleString()} · {v.username} · {v.branch}
-                  {v.hasConflicts && <span style={{ color: "#ff9b9b" }}> · {v.conflictCount} conflict(s)</span>}
+              <div className="list-row" key={v._id}>
+                <span className="list-row__meta">
+                  {new Date(v.timestamp).toLocaleString()} &middot; {v.username} &middot;{" "}
+                  <span className="mono">{v.branch}</span>
+                  {v.hasConflicts && (
+                    <span className="badge badge--danger" style={{ marginLeft: "var(--space-2)" }}>
+                      {v.conflictCount} conflict{v.conflictCount === 1 ? "" : "s"}
+                    </span>
+                  )}
                 </span>
-                <span>
+                <span style={{ display: "flex", gap: "var(--space-1)" }}>
                   <button
+                    className={`btn btn--sm ${v.citable ? "btn--on" : "btn--quiet"}`}
                     onClick={() => handleCite(v)}
-                    title={v.citable ? "Published — click to unpublish" : "Publish so this version can be cited"}
-                    style={{ ...btn, fontSize: 12, marginRight: 6,
-                             borderColor: v.citable ? "#3ba55d" : "#4f545c",
-                             color: v.citable ? "#3ba55d" : "#dcddde" }}
+                    title={v.citable ? "Published. Click to unpublish." : "Publish so this version can be cited"}
                   >
                     {v.citable ? "Cited" : "Cite"}
                   </button>
-                  <button onClick={() => handleRestore(v._id)} style={{ ...btn, fontSize: 12 }}>Load</button>
+                  <button className="btn btn--sm btn--quiet" onClick={() => handleRestore(v._id)}>
+                    Load
+                  </button>
                 </span>
               </div>
             ))}
@@ -223,15 +232,6 @@ const ProseEditorPanel = ({ open, onClose, filename, sessionId, user, branch = "
       </div>
     </Rnd>
   );
-};
-
-const btn = {
-  background: "transparent",
-  color: "#dcddde",
-  border: "1px solid #4f545c",
-  borderRadius: 4,
-  padding: "3px 8px",
-  cursor: "pointer",
 };
 
 export default ProseEditorPanel;

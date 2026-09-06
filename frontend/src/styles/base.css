@@ -16,7 +16,17 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 
-html, body, #root { height: 100%; }
+/* The background is set on html as well as body. When html has no background
+   of its own, body's propagates to the canvas and body itself then computes as
+   transparent, which makes the page harder to reason about and leaves a flash
+   of white behind the app during load in dark mode. */
+html {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+}
+
+body, #root { height: 100%; }
 
 body {
   margin: 0;

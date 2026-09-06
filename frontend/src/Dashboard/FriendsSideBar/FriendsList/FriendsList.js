@@ -4,7 +4,8 @@ import FriendsListItem from "./FriendsListItem";
 import { connect } from "react-redux";
 
 const MainContainer = styled("div")({
-  flexGrow: 1,
+  // Sized by its contents. Growing pushed the next section into dead space.
+  flexShrink: 0,
   width: "100%",
 });
 

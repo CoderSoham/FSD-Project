@@ -29,7 +29,8 @@
   /* --- Text, from most to least important ------------------------------- */
   --text:            #16181d;  /* body and headings */
   --text-muted:      #5b6270;  /* secondary information */
-  --text-subtle:     #868d9b;  /* timestamps, hints, placeholders */
+  --text-subtle:     #626977;  /* timestamps, hints, placeholders. Dark
+                                  enough to clear AA on --surface-sunken. */
   --text-on-accent:  #ffffff;
 
   /* --- Lines ------------------------------------------------------------ */
@@ -80,15 +81,17 @@
 
   --text:            #e8eaed;
   --text-muted:      #a2a9b6;
-  --text-subtle:     #737b8a;
+  --text-subtle:     #838c9c;  /* clears AA on --surface */
   --text-on-accent:  #ffffff;
 
   --border:          #262a33;
   --border-strong:   #363b46;
   --border-subtle:   #1e2128;
 
-  --accent:          #6366f1;
-  --accent-hover:    #7679f3;
+  /* Deep enough to carry white text at 4.5:1. #6366f1 measured 4.47, which is
+     close enough to look fine and still fail the standard. */
+  --accent:          #5b5fe8;
+  --accent-hover:    #6d70ef;
   --accent-active:   #818cf8;
   --accent-quiet:    #1e1b3a;
   --accent-text:     #a5b4fc;
@@ -162,6 +165,13 @@
   /* One duration and one curve, so motion feels like one system. */
   --duration: 140ms;
   --ease: cubic-bezier(0.2, 0, 0.2, 1);
+
+  /* Layout. The app bar is positioned against these, so a change to a sidebar
+     width cannot leave the bar misaligned the way a hardcoded 326px did. */
+  --rail-width: 68px;
+  --sidebar-width: 248px;
+  --chrome-width: calc(var(--rail-width) + var(--sidebar-width) + 2px);
+  --appbar-height: 52px;
 
   --z-panel: 1200;
   --z-modal: 1300;

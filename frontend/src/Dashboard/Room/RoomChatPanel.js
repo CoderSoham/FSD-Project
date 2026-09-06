@@ -9,14 +9,14 @@ const Panel = styled("div")(({ open }) => ({
   width: open ? 260 : 0,
   minWidth: open ? 260 : 0,
   maxWidth: 260,
-  background: "#23272a",
-  color: "#fff",
+  background: "var(--surface-sunken)",
+  color: "var(--text)",
   height: "100%",
   transition: "width 0.2s, min-width 0.2s",
   overflow: open ? "auto" : "hidden",
   display: open ? "flex" : "none",
   flexDirection: "column",
-  borderRight: "1px solid #36393f",
+  borderRight: "1px solid var(--surface-raised)",
   zIndex: 30,
 }));
 
@@ -33,14 +33,14 @@ const InputRow = styled("div")({
   display: "flex",
   alignItems: "center",
   padding: "8px",
-  borderTop: "1px solid #36393f",
-  background: "#23272a"
+  borderTop: "1px solid var(--surface-raised)",
+  background: "var(--surface-sunken)"
 });
 
 const Input = styled("input")({
   flex: 1,
-  background: "#2f3136",
-  color: "#fff",
+  background: "var(--surface)",
+  color: "var(--text)",
   border: "none",
   borderRadius: "8px",
   fontSize: "14px",
@@ -51,7 +51,7 @@ const Input = styled("input")({
 const IconButton = styled("button")({
   background: "none",
   border: "none",
-  color: "#b9bbbe",
+  color: "var(--text-muted)",
   cursor: "pointer",
   fontSize: "22px",
   display: "flex",
@@ -67,7 +67,7 @@ const HiddenInput = styled("input")({
 const ProgressBar = styled("div")({
   height: "4px",
   width: "100%",
-  background: "var(--color-surface-alt)",
+  background: "var(--surface-sunken)",
   borderRadius: "2px",
   margin: "4px 0 0 0",
   overflow: "hidden"
@@ -75,7 +75,7 @@ const ProgressBar = styled("div")({
 const ProgressFill = styled("div")(({ percent }) => ({
   height: "100%",
   width: `${percent}%`,
-  background: "var(--color-primary)",
+  background: "var(--accent)",
   transition: "width 0.2s"
 }));
 
@@ -192,9 +192,9 @@ const RoomChatPanel = ({ open, setOpen }) => {
 
   return (
     <Panel open={open}>
-      <div style={{ fontWeight: 600, fontSize: 18, padding: 12, borderBottom: "1px solid #36393f", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ fontWeight: 600, fontSize: 18, padding: 12, borderBottom: "1px solid var(--surface-raised)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         Meeting Chat
-        <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: "#fff", fontSize: 18, cursor: "pointer" }}>×</button>
+        <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: "var(--text)", fontSize: 18, cursor: "pointer" }}>×</button>
       </div>
       {uploadProgress > 0 && uploadProgress < 100 && (
         <ProgressBar><ProgressFill percent={uploadProgress} /></ProgressBar>

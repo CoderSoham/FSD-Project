@@ -14,8 +14,8 @@ const MainContainer = styled("div")({
   flexDirection: "row",
   alignItems: "stretch",
   justifyContent: "center",
-  backgroundColor: "var(--color-surface)",
-  boxShadow: "0 4px 24px var(--color-shadow)",
+  backgroundColor: "var(--surface)",
+  boxShadow: "var(--shadow-lg)",
   transition: "background 0.3s, box-shadow 0.3s, border-radius 0.3s"
 });
 
@@ -68,8 +68,8 @@ const Room = () => {
               left: chatOpen ? 260 : 0,
               top: 16,
               zIndex: 20,
-              background: "#23272a",
-              color: "#fff",
+              background: "var(--surface-sunken)",
+              color: "var(--text)",
               border: "none",
               borderRadius: "0 8px 8px 0",
               padding: "8px 12px",
@@ -90,8 +90,8 @@ const Room = () => {
               right: 16,
               top: 16,
               zIndex: 20,
-              background: "#23272a",
-              color: "#fff",
+              background: "var(--surface-sunken)",
+              color: "var(--text)",
               border: "none",
               borderRadius: "8px",
               padding: "8px 12px",

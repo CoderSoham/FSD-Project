@@ -6,9 +6,11 @@ const FriendsTitle = ({ title }) => {
     <Typography
       sx={{
         textTransform: "uppercase",
-        color: "#8e9297",
-        fontSize: "14px",
-        marginTop: "10px",
+        color: "var(--text-subtle)",
+        fontSize: "11px",
+        fontWeight: 600,
+        letterSpacing: "0.06em",
+        padding: "var(--space-3) var(--space-2) var(--space-1)",
       }}
     >
       {title}

@@ -12,14 +12,14 @@ const InvitationDecisionButtons = ({
   return (
     <Box sx={{ display: "flex" }}>
       <IconButton
-        style={{ color: "white" }}
+        style={{ color: "var(--text)" }}
         disabled={disabled}
         onClick={acceptInvitationHandler}
       >
         <CheckIcon />
       </IconButton>
       <IconButton
-        style={{ color: "white" }}
+        style={{ color: "var(--text)" }}
         disabled={disabled}
         onClick={rejectInvitationHandler}
       >

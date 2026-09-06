@@ -3,7 +3,7 @@ import { styled } from "@mui/system";
 
 const Separator = styled("div")({
   width: "95%",
-  backgroundColor: "#b9bbbe",
+  backgroundColor: "var(--border)",
   height: "1px",
   position: "relative",
   marginTop: "20px",
@@ -11,11 +11,11 @@ const Separator = styled("div")({
 });
 
 const DateLabel = styled("span")({
-  backgroundColor: "#36393f",
+  backgroundColor: "var(--surface-raised)",
   position: "absolute",
   left: "45%",
   top: "-10px",
-  color: "#b9bbbe",
+  color: "var(--text-muted)",
   padding: "0 5px",
   fontSize: "14px",
 });

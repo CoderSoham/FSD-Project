@@ -16,10 +16,10 @@ const MainContainer = styled("div")({
 });
 
 const Input = styled("input")({
-  backgroundColor: "#2f3136",
+  backgroundColor: "var(--surface)",
   width: "98%",
   height: "44px",
-  color: "white",
+  color: "var(--text)",
   border: "none",
   borderRadius: "8px",
   fontSize: "14px",
@@ -29,7 +29,7 @@ const Input = styled("input")({
 const IconButton = styled("button")({
   background: "none",
   border: "none",
-  color: "#b9bbbe",
+  color: "var(--text-muted)",
   cursor: "pointer",
   marginRight: "8px",
   fontSize: "22px",
@@ -43,7 +43,7 @@ const Menu = styled("div")({
   position: "absolute",
   bottom: "60px",
   left: "10px",
-  background: "#23272a",
+  background: "var(--surface-sunken)",
   borderRadius: "8px",
   boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
   padding: "8px 0",
@@ -52,11 +52,11 @@ const Menu = styled("div")({
 });
 
 const MenuItem = styled("div")({
-  color: "#fff",
+  color: "var(--text)",
   padding: "8px 16px",
   cursor: "pointer",
   ':hover': {
-    background: "#36393f"
+    background: "var(--surface-raised)"
   }
 });
 

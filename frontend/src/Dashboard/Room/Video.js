@@ -5,9 +5,9 @@ import Avatar from "../../shared/components/Avatar";
 const MainContainer = styled("div")({
   width: "100%",
   height: "100%",
-  backgroundColor: "var(--color-surface-alt)",
+  backgroundColor: "var(--surface-sunken)",
   borderRadius: "12px",
-  boxShadow: "0 2px 12px var(--color-shadow)",
+  boxShadow: "var(--shadow-md)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -24,6 +24,8 @@ const VideoEl = styled("video")({
   height: "100%",
   objectFit: "cover",
   borderRadius: "12px",
+  // Deliberately black. This is the letterbox behind a video frame,
+  // not a themed surface, and it should not change with the theme.
   background: "#000"
 });
 
@@ -33,8 +35,8 @@ const Fallback = styled("div")({
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "var(--color-surface-alt)",
-  color: "var(--color-primary)",
+  background: "var(--surface-sunken)",
+  color: "var(--accent)",
   fontSize: "2.5rem",
   fontWeight: 700,
   borderRadius: "12px"

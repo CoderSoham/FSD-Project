@@ -38,7 +38,7 @@ const ScreenShareButton = ({
   };
 
   return (
-    <IconButton onClick={handleScreenShareToggle} style={{ color: "white" }}>
+    <IconButton onClick={handleScreenShareToggle} style={{ color: "var(--text)" }}>
       {isScreenSharingActive ? <StopScreenShareIcon /> : <ScreenShareIcon />}
     </IconButton>
   );

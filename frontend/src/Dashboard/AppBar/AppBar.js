@@ -10,32 +10,33 @@ const MainContainer = styled("div")({
   position: "absolute",
   right: "0",
   top: "0",
-  height: "48px",
-  borderBottom: "1px solid var(--color-border)",
-  backgroundColor: "var(--color-surface-alt)",
-  width: "calc(100% - 326px)",
+  height: "var(--appbar-height)",
+  borderBottom: "1px solid var(--border)",
+  backgroundColor: "var(--surface)",
+  // Driven by the chrome width token rather than a hardcoded 326px, which no
+  // longer matched the sidebars and left the bar starting in the wrong place.
+  left: "var(--chrome-width)",
+  width: "auto",
   display: "flex",
   alignItems: "center",
-  justifyContent: "space-between",
-  padding: "0 15px",
-  boxShadow: "0 2px 8px var(--color-shadow)",
-  transition: "background 0.3s, box-shadow 0.3s, border 0.3s"
+  justifyContent: "flex-end",
+  gap: "var(--space-2)",
+  padding: "0 var(--space-4)"
 });
 
 const ThemeToggleButton = styled("button")({
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  width: "32px",
+  height: "32px",
   background: "none",
-  border: "none",
-  color: "var(--color-text)",
+  border: "1px solid transparent",
+  borderRadius: "var(--radius-md)",
+  color: "var(--text-muted)",
   cursor: "pointer",
-  fontSize: "1.2rem",
-  marginLeft: "16px",
-  padding: "6px 12px",
-  borderRadius: "6px",
-  transition: "background 0.2s, color 0.2s",
-  ':hover': {
-    background: "var(--color-surface)",
-    color: "var(--color-primary)"
-  }
+  transition: "background var(--duration) var(--ease), color var(--duration) var(--ease)",
+  "&:hover": { background: "var(--surface-hover)", color: "var(--text)" },
 });
 
 const AppBar = () => {
@@ -50,15 +51,29 @@ const AppBar = () => {
         <div style={{ display: "flex", alignItems: "center" }}>
           <DropdownMenu />
           <button
-            className="modern-btn"
-            style={{ marginLeft: 16, marginRight: 8, padding: '6px 16px', fontWeight: 600 }}
+            className="btn btn--quiet"
             onClick={() => setEditorOpen(true)}
-            title="Open Code Editor"
+            title="Open the code editor"
           >
-            {'</>'} Code
+            Code
           </button>
-          <ThemeToggleButton onClick={toggleTheme} title="Toggle dark/light mode">
-            {theme === "light" ? "🌞" : "🌙"}
+          <ThemeToggleButton
+            onClick={toggleTheme}
+            title={theme === "light" ? "Switch to dark" : "Switch to light"}
+            aria-label={theme === "light" ? "Switch to dark theme" : "Switch to light theme"}
+          >
+            {theme === "light" ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+                  stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="4.2" stroke="currentColor" strokeWidth="1.8" />
+                <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"
+                  stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+            )}
           </ThemeToggleButton>
         </div>
       </MainContainer>

@@ -1,0 +1,14 @@
+{
+  "name": "gitcord",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Collaboration workspace for research groups. Calls and chat, with git-style version control over the documents themselves.",
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
+  }
+}

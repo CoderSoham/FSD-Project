@@ -20,9 +20,9 @@ const AvatarContainer = styled("div")({
 const MessageContainer = styled("div")({
   display: "flex",
   flexDirection: "column",
-  background: "var(--color-surface-alt)",
+  background: "var(--surface-sunken)",
   borderRadius: "10px",
-  boxShadow: "0 1px 4px var(--color-shadow)",
+  boxShadow: "var(--shadow-sm)",
   padding: "10px 16px 10px 16px",
   transition: "background 0.2s, box-shadow 0.2s",
   position: "relative",
@@ -31,19 +31,19 @@ const MessageContainer = styled("div")({
 });
 
 const MessageContent = styled("div")({
-  color: "var(--color-text)",
+  color: "var(--text)",
   fontSize: "15px",
   wordBreak: "break-word",
   marginTop: "2px"
 });
 
 const SameAuthorMessageContent = styled("div")({
-  color: "var(--color-text)",
+  color: "var(--text)",
   width: "97%",
   marginLeft: "58px",
-  background: "var(--color-surface-alt)",
+  background: "var(--surface-sunken)",
   borderRadius: "10px",
-  boxShadow: "0 1px 4px var(--color-shadow)",
+  boxShadow: "var(--shadow-sm)",
   padding: "8px 16px",
   fontSize: "15px",
   marginTop: "2px"
@@ -67,7 +67,7 @@ function renderFilePreview(content) {
   if (content.startsWith("/uploads/")) {
     const filename = content.split("/").pop();
     return (
-      <span style={{ color: "var(--color-secondary)", fontStyle: "italic" }} title={filename}>
+      <span style={{ color: "var(--text-muted)", fontStyle: "italic" }} title={filename}>
         {filename} — shared before secure downloads, no longer retrievable
       </span>
     );
@@ -90,9 +90,9 @@ const Message = ({ content, sameAuthor, username, date, sameDay }) => {
         <Avatar username={username} />
       </AvatarContainer>
       <MessageContainer>
-        <Typography style={{ fontSize: "15px", color: "var(--color-primary)", fontWeight: 600 }}>
+        <Typography style={{ fontSize: "15px", color: "var(--accent)", fontWeight: 600 }}>
           {username} {" "}
-          <span style={{ fontSize: "12px", color: "var(--color-secondary)" }}>{date}</span>
+          <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>{date}</span>
         </Typography>
         <MessageContent>{renderFilePreview(content)}</MessageContent>
       </MessageContainer>

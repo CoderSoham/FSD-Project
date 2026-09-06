@@ -4,14 +4,14 @@ import { styled } from "@mui/system";
 const AvatarPreview = styled("div")({
   height: "42px",
   width: "42px",
-  backgroundColor: "#5865f2",
+  backgroundColor: "var(--accent)",
   borderRadius: "42px",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   fontSize: "20px",
   fontWeight: "700",
-  color: "white",
+  color: "var(--text)",
 });
 
 const Avatar = ({ username, large }) => {

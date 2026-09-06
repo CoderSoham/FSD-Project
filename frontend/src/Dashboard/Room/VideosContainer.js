@@ -13,9 +13,9 @@ const MainContainer = styled("div")(({ streamCount }) => ({
   justifyContent: "center",
   gap: streamCount === 1 ? 0 : "18px",
   padding: streamCount === 1 ? 0 : "18px 12px 12px 12px",
-  background: "var(--color-surface)",
+  background: "var(--surface)",
   borderRadius: "12px",
-  boxShadow: "0 2px 12px var(--color-shadow)",
+  boxShadow: "var(--shadow-md)",
   transition: "background 0.3s, box-shadow 0.3s",
   ...(streamCount > 1 && {
     gridTemplateColumns: `repeat(auto-fit, minmax(260px, 1fr))`,

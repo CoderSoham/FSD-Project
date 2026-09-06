@@ -32,3 +32,9 @@ uploads/
 CLAUDE.md
 .mcp.json
 .claude/
+
+# Playwright
+node_modules/
+test-results/
+playwright-report/
+e2e/screens/

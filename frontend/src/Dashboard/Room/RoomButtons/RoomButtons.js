@@ -16,7 +16,7 @@ let VIDEO_BLOB = "";
 const MainContainer = styled("div")({
   height: "15%",
   width: "100%",
-  backgroundColor: "#5865f2",
+  backgroundColor: "var(--accent)",
   borderTopLeftRadius: "8px",
   borderTopRightRadius: "8px",
   display: "flex",
@@ -77,9 +77,9 @@ const RoomButtons = (props) => {
       {!isUserJoinedWithOnlyAudio && <CameraButton localStream={localStream} />}
       <button
         style={{
-          border: "1px solid #fff",
+          border: "1px solid var(--surface)",
           background: "inherit",
-          color: "white",
+          color: "var(--text)",
           cursor: "pointer",
           borderRadius: "5px",
           padding: "3px",
@@ -93,9 +93,9 @@ const RoomButtons = (props) => {
       {isDownloadable && (
         <button
           style={{
-            border: "1px solid #fff",
+            border: "1px solid var(--surface)",
             background: "inherit",
-            color: "white",
+            color: "var(--text)",
             cursor: "pointer",
             borderRadius: "5px",
             padding: "3px",

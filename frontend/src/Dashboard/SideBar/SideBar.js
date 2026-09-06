@@ -6,15 +6,18 @@ import { connect } from "react-redux";
 import ActiveRoomButton from "./ActiveRoomButton";
 
 const MainContainer = styled("div")({
-  width: "72px",
+  width: "var(--rail-width)",
   height: "100%",
+  flex: "none",
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
-  backgroundColor: "var(--color-surface)",
-  borderRight: "1px solid var(--color-border)",
-  boxShadow: "2px 0 8px var(--color-shadow)",
-  transition: "background 0.3s, box-shadow 0.3s, border 0.3s"
+  gap: "var(--space-2)",
+  padding: "var(--space-3) 0",
+  // The rail is chrome. Giving it the page colour made it disappear in light
+  // mode and the buttons looked like they were floating on nothing.
+  backgroundColor: "var(--surface-sunken)",
+  borderRight: "1px solid var(--border)",
 });
 
 const SideBar = ({ activeRooms, isUserInRoom }) => {

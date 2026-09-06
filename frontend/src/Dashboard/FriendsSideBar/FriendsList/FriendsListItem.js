@@ -22,7 +22,7 @@ const FriendsListItem = ({ id, username, isOnline, setChosenChatDetails }) => {
         alignItems: "center",
         justifyContent: "flex-start",
         textTransform: "none",
-        color: "black",
+        color: "var(--text)",
         position: "relative",
       }}
     >
@@ -30,8 +30,10 @@ const FriendsListItem = ({ id, username, isOnline, setChosenChatDetails }) => {
       <Typography
         style={{
           marginLeft: "7px",
-          fontWeight: 700,
-          color: "#8e9297",
+          fontWeight: 500,
+          // A person's name is primary content. It was subtle grey, which
+          // measured 2.9:1 against the sidebar.
+          color: "var(--text)",
         }}
         variant="subtitle1"
         align="left"

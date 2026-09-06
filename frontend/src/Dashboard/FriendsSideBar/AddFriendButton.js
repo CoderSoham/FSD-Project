@@ -3,11 +3,12 @@ import CustomPrimaryButton from "../../shared/components/CustomPrimaryButton";
 import AddFriendDialog from "./AddFriendDialog";
 
 const additionalStyles = {
-  marginTop: "10px",
-  marginLeft: "5px",
-  width: "80%",
-  height: "30px",
-  background: "#3ba55d",
+  width: "100%",
+  height: "34px",
+  fontSize: "13px",
+  // Was green, which is a status colour, not an action colour, and gave
+  // 1.89:1 against its white label in dark mode.
+  background: "var(--accent)",
 };
 
 const AddFriendButton = () => {

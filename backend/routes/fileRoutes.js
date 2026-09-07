@@ -2,15 +2,14 @@ const asyncHandler = require('../middleware/asyncHandler');
 const express = require('express');
 const auth = require('../middleware/auth');
 const multer = require('multer');
-const path = require('path');
-const { uploadFile, downloadFile, getRoomFiles, getRoomMessages, postRoomMessage } = require('../controllers/fileController');
+const { UPLOAD_DIR, uploadFile, downloadFile, getRoomFiles, getRoomMessages, postRoomMessage } = require('../controllers/fileController');
 
 const router = express.Router();
 
 // Set up multer storage
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, '../uploads'));
+    cb(null, UPLOAD_DIR);
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);

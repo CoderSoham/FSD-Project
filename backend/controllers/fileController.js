@@ -9,6 +9,14 @@ const { canAccessFile, resolveStoredPath } = require('../utils/fileAccess');
 const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
 
 /**
+ * The uploads directory is not in the repository, and should not be: it holds
+ * other people's files. But nothing created it either, so on a fresh clone
+ * multer had nowhere to write and every upload came back as an opaque 500.
+ * Create it once, at load.
+ */
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
+/**
  * Everyone who may later fetch a file uploaded into this room.
  *
  * Captured at upload time because rooms do not persist -- serverStore holds
@@ -130,4 +138,5 @@ const postRoomMessage = async (req, res) => {
   res.status(201).json(message);
 };
 
-module.exports = { uploadFile, downloadFile, getRoomFiles, getRoomMessages, postRoomMessage }; 
+module.exports = {
+  UPLOAD_DIR, uploadFile, downloadFile, getRoomFiles, getRoomMessages, postRoomMessage }; 

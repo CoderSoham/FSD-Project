@@ -91,4 +91,105 @@ function contrast(fg, bg) {
   return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
 }
 
-module.exports = { signIn, setTheme, token, contrast, parseColor, SEEDED, PASSWORD, API };
+/**
+ * Open the code editor and wait for Monaco to be usable.
+ *
+ * The size check is not paranoia. Monaco measures its container when it mounts,
+ * and inside this panel it can measure before flex has resolved and settle at
+ * five pixels square, where it looks mounted and accepts nothing.
+ */
+async function openCodeEditor(page, { filename } = {}) {
+  await page.getByTitle("Open the code editor").click();
+  await page.waitForSelector(".code-panel");
+  await page.waitForSelector(".monaco-editor textarea", { state: "attached" });
+  await page.waitForFunction(
+    () => {
+      const r = document.querySelector(".monaco-editor")?.getBoundingClientRect();
+      return r && r.width > 200 && r.height > 100;
+    },
+    { timeout: 15000 }
+  );
+  if (filename) {
+    await page.getByLabel("Filename").fill(filename);
+  }
+  await page.waitForTimeout(400);
+}
+
+/**
+ * Type into Monaco.
+ *
+ * Clicking the hidden textarea does not focus the editor; Monaco listens on its
+ * own text surface. Click that, confirm focus landed, then type.
+ */
+async function typeInEditor(page, text) {
+  await page.locator(".monaco-editor .view-lines").first().click();
+  await page.waitForFunction(
+    () =>
+      document.activeElement?.classList.contains("inputarea") ||
+      document.activeElement?.closest(".monaco-editor") !== null,
+    { timeout: 5000 }
+  );
+  await page.keyboard.type(text, { delay: 20 });
+}
+
+/**
+ * The editor's visible text.
+ *
+ * Monaco renders every space as a non-breaking space (U+00A0), so a naive
+ * comparison against ordinary text fails even when the two look identical on
+ * screen. Normalise before returning.
+ */
+function editorText(page) {
+  return page.evaluate(() => {
+    if (!document.querySelector(".monaco-editor")) return null;
+    return Array.from(document.querySelectorAll(".view-line"))
+      .map((l) => l.textContent.replace(/\u00a0/g, " "))
+      .join("\n");
+  });
+}
+
+/**
+ * Call the API from inside a signed in page, using that page's own token.
+ *
+ * Some setup is far cheaper through the API than through the interface, and
+ * doing it in the browser means it uses the same session the test does.
+ */
+async function api(page, path, { method = "GET", body } = {}) {
+  return page.evaluate(
+    async ({ apiBase, path, method, body }) => {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const res = await fetch(`${apiBase}${path}`, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          ...(user.token ? { Authorization: `Bearer ${user.token}` } : {}),
+        },
+        ...(body ? { body: JSON.stringify(body) } : {}),
+      });
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = text;
+      }
+      return { status: res.status, data };
+    },
+    { apiBase: API, path, method, body }
+  );
+}
+
+module.exports = {
+  signIn,
+  setTheme,
+  token,
+  contrast,
+  parseColor,
+  openCodeEditor,
+  typeInEditor,
+  editorText,
+  api,
+  SEEDED,
+  PASSWORD,
+  API,
+};

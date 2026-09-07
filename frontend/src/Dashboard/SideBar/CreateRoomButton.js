@@ -15,6 +15,8 @@ const CreateRoomButton = ({ isUserInRoom, userId }) => {
       <Button
         disabled={isUserInRoom}
         onClick={createNewRoomHandler}
+        aria-label="Create a room"
+        title="Create a room"
         style={{
           width: "48px",
           height: "48px",

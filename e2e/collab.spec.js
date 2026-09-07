@@ -1,5 +1,5 @@
 const { test, expect } = require("@playwright/test");
-const { signIn } = require("./helpers");
+const { signIn, openCodeEditor, typeInEditor, editorText } = require("./helpers");
 
 /**
  * Collaborative editing, with two real browsers.
@@ -15,51 +15,8 @@ const { signIn } = require("./helpers");
  * Everything was tested and nothing was connected.
  */
 
-/** Open the code editor and wait for Monaco to be usable. */
-async function openEditor(page) {
-  await page.getByTitle("Open the code editor").click();
-  await page.waitForSelector(".code-panel");
-  await page.waitForSelector(".monaco-editor textarea", { state: "attached" });
-  // Wait for Monaco to have a real size. It settles at 5x5 if it measures
-  // before the panel's flex layout resolves.
-  await page.waitForFunction(() => {
-    const r = document.querySelector(".monaco-editor")?.getBoundingClientRect();
-    return r && r.width > 200 && r.height > 100;
-  }, { timeout: 15000 });
-  await page.waitForTimeout(400);
-}
-
-/**
- * Type into Monaco.
- *
- * Clicking the hidden textarea does not focus the editor; Monaco listens on its
- * own text surface. Click that, confirm focus landed, then type.
- */
-async function typeInEditor(page, text) {
-  await page.locator(".monaco-editor .view-lines").first().click();
-  await page.waitForFunction(
-    () => document.activeElement?.classList.contains("inputarea") ||
-          document.activeElement?.closest(".monaco-editor") !== null,
-    { timeout: 5000 }
-  );
-  await page.keyboard.type(text, { delay: 20 });
-}
-
-/**
- * The editor's visible text.
- *
- * Monaco renders every space as a non-breaking space (U+00A0), so a naive
- * comparison against ordinary text fails even when the two look identical on
- * screen. Normalise before returning.
- */
-function editorText(page) {
-  return page.evaluate(() => {
-    if (!document.querySelector(".monaco-editor")) return null;
-    return Array.from(document.querySelectorAll(".view-line"))
-      .map((l) => l.textContent.replace(/\u00a0/g, " "))
-      .join("\n");
-  });
-}
+// openCodeEditor, typeInEditor and editorText live in ./helpers, because the
+// versioning and citation specs need exactly the same three.
 
 test("two people editing one document see each other's text", async ({ browser }) => {
   const ada = await browser.newContext();
@@ -71,11 +28,10 @@ test("two people editing one document see each other's text", async ({ browser }
     await signIn(pageA, "ada");
     await signIn(pageB, "grace");
 
-    await openEditor(pageA);
-    await openEditor(pageB);
+    await openCodeEditor(pageA);
+    await openCodeEditor(pageB);
 
     // Both default to code.js on main, so both derive the same session id.
-    const sessionA = await pageA.evaluate(() => window.__collabSession || null);
 
     await typeInEditor(pageA, "// written by ada\n");
 
@@ -110,8 +66,8 @@ test("an edit made while disconnected arrives after reconnecting", async ({ brow
   try {
     await signIn(pageA, "ada");
     await signIn(pageB, "grace");
-    await openEditor(pageA);
-    await openEditor(pageB);
+    await openCodeEditor(pageA);
+    await openCodeEditor(pageB);
 
     // Establish a shared baseline first.
     await typeInEditor(pageA, "// baseline\n");

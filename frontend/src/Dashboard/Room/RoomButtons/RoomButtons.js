@@ -53,7 +53,9 @@ const RoomButtons = (props) => {
     if (recorder) {
       await recorder.stopRecording();
       const blob = await recorder.getBlob();
-      stream.stop();
+      // Deliberately not stopping the stream. MediaStream has had no stop()
+      // for years so this threw, and had it worked it would have ended the
+      // camera and microphone for the call itself, not just the recording.
       setVideoUrlBlob(blob);
       VIDEO_BLOB = blob;
       setStream(null);
@@ -86,6 +88,7 @@ const RoomButtons = (props) => {
           marginRight: "10px",
         }}
         onClick={isRecording ? handleStopRecord : handleRecord}
+        title={isRecording ? "Stop recording this call" : "Record this call"}
       >
         {isRecording ? "Stop recording" : "Start recording"}
       </button>

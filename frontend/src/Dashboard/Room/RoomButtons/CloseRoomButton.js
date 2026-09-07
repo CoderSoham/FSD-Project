@@ -9,7 +9,12 @@ const CloseRoomButton = () => {
   };
 
   return (
-    <IconButton onClick={handleLeaveRoom} style={{ color: "var(--text)" }}>
+    <IconButton
+      onClick={handleLeaveRoom}
+      style={{ color: "var(--text)" }}
+      aria-label="Leave the room"
+      title="Leave the room"
+    >
       <CloseIcon />
     </IconButton>
   );

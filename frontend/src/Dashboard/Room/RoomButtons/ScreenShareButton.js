@@ -37,8 +37,16 @@ const ScreenShareButton = ({
     }
   };
 
+  const label = isScreenSharingActive ? "Stop sharing your screen" : "Share your screen";
+
   return (
-    <IconButton onClick={handleScreenShareToggle} style={{ color: "var(--text)" }}>
+    <IconButton
+      onClick={handleScreenShareToggle}
+      style={{ color: "var(--text)" }}
+      aria-label={label}
+      aria-pressed={Boolean(isScreenSharingActive)}
+      title={label}
+    >
       {isScreenSharingActive ? <StopScreenShareIcon /> : <ScreenShareIcon />}
     </IconButton>
   );

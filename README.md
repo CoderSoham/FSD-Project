@@ -1,188 +1,278 @@
-# FSD-Project — a collaboration workspace for research groups
+# GitCord
 
-Discord-style communication with git-style document history. Built for
-academics and research groups who need to talk, screen-share and video-call
-while working on shared documents — and need a trustworthy record of who
-changed what.
+A collaboration workspace for research groups. Discord-style communication with
+git-style history over the documents themselves.
 
-The communication half is a Discord-style app: accounts, a friends graph built
-on invitations, one-to-one messaging with persisted history, and group video
-rooms over WebRTC with screen sharing and call recording.
+The idea is straightforward. A research group needs to talk, screen share and
+video call while working on a shared paper or a shared analysis, and it needs a
+record of who changed what that holds up later. Chat tools give you the first
+half. Version control gives you the second. Nothing gives you both in one place,
+so people end up with a Discord server, a Google Doc, and a repository that
+disagrees with both.
 
-The collaboration half is version control over the documents themselves:
-real-time collaborative editing, versions with parents and branches, diffs
-between any two versions, merges, inline comments anchored to a version, and
-file sharing inside a room.
+**Live:** https://fsd-project-mu.vercel.app
+**API:** https://fsd-project-api.vercel.app
 
-**Live:** https://fsd-project-mu.vercel.app · **API:** https://fsd-project-api.vercel.app
-
-> Built as the Full Stack Development course project, MIT World Peace University,
-> Oct–Nov 2024.
-
----
+Built as the Full Stack Development course project at MIT World Peace
+University, October to November 2024, and extended well past it since.
 
 ## What it does
 
-| | |
-|---|---|
-| **Accounts** | Register and log in. Passwords hashed with bcrypt, sessions carried as JWTs, request bodies validated by Joi schemas before they reach a controller. |
-| **Friends** | Invite by email, accept or reject. Pending invitations and the friends list update live over the socket — no refresh. |
-| **Presence** | Online/offline state is derived from active socket connections and pushed to everyone who has you as a friend. |
-| **Direct messages** | One-to-one chat backed by MongoDB. Conversation history loads on open and new messages arrive over the socket. |
-| **Video rooms** | Create a room, others join. Peer-to-peer audio/video over WebRTC, with per-participant mic and camera toggles. |
-| **Screen share** | Swaps the outgoing video track on the live connection, so no renegotiation is needed. |
-| **Call recording** | Records the room stream via RecordRTC and saves it to your machine as an `.mp4`. Entirely local — nothing is uploaded. |
-| **Collaborative editing** | A Monaco editor bound to a Yjs CRDT. Concurrent edits merge deterministically, edits made while disconnected reconcile on reconnect, and cursors are carried by awareness. |
-| **Document versions** | Every save creates a version carrying its parent, forming a history you can walk rather than a flat list of saves. |
-| **Rich text documents** | A TipTap editor for papers and notes, on the same CRDT transport and the same version model as code. Prose is stored as Markdown, so diffs, merges and conflict blocks stay readable — and the work can leave in a format that outlives the tool. |
-| **Branches and merges** | Branch from any version and merge back with a real three-way merge — the common ancestor is found by walking the version DAG, non-overlapping edits from both sides are kept, and overlapping ones become labelled conflict blocks rather than a silent winner. |
-| **Version diffs** | Any two versions rendered side by side via `react-diff-viewer`. |
-| **Citable versions** | Publish any version to a stable public URL with a plain-text reference, a BibTeX entry, and a sha256 of the content so a reader can verify the text is what was cited. Off by default — a version is unreachable without an account until an author publishes it. |
-| **History export** | Take the whole version graph out as a `git fast-import` stream. `git init && git fast-import` gives a real repository with the branches, merge commits, authors and dates intact. Your work can leave. |
-| **Inline comments** | Comments anchored to a position in a specific version, so review feedback stays attached to the text it refers to. |
-| **File sharing** | Upload files into a room; they appear in the room's file list alongside its messages. Downloads go through an authenticated route that checks an access list captured at upload time — nothing is served from a public path. |
+### Talking to people
 
-> **Authorship comes from the JWT, never the request body.** A version can only
-> be attributed to the account that actually saved it. The history is the
-> product here — if it could be forged it would be worthless.
+Register and log in, invite people by email, and accept or reject invitations.
+Presence comes from live socket connections, so the friends list shows who is
+actually around without a refresh. Direct messages persist in MongoDB and
+history loads when you open a conversation.
+
+Video rooms are peer to peer over WebRTC. Create a room, others join, and each
+person can toggle their own microphone and camera. Screen sharing swaps the
+outgoing video track on the connection that is already open, so nothing has to
+be renegotiated. You can record a call, which happens entirely in your browser
+and writes an mp4 to your machine. Nothing is uploaded.
+
+### Working on documents
+
+The code editor is Monaco bound to a Yjs CRDT. Two people typing in the same
+file at the same time both keep their edits, and an edit made while your
+connection is down reconciles when it comes back. Cursors are carried by
+awareness, so you can see where someone else is working.
+
+There is a second editor for prose, built on TipTap, running on the same
+transport and the same version model. Papers get written in a prose editor and
+analysis gets written in a code editor, and neither has to pretend to be the
+other.
+
+### Keeping the history
+
+Every save creates a version that records its parent, so the history is a graph
+you can walk rather than a pile of saves. From there:
+
+**Branches and merges.** Branch from any version, and merge back with a real
+three way merge. The common ancestor is found by walking the version graph.
+Edits that do not overlap are kept from both sides. Edits that do overlap become
+labelled conflict blocks, because a merge tool that silently picks a winner is
+worse than one that admits it cannot decide.
+
+**Diffs.** Any two versions side by side, or the tips of two branches against
+each other.
+
+**Comments.** Anchored to a range of lines in a specific version, so review
+feedback stays attached to the text it was about.
+
+**Citable versions.** Publish a version to a stable public URL. The page carries
+a plain reference, a BibTeX entry, and a sha256 of the content, so a reader
+following a citation can confirm the text in front of them is the text that was
+cited. It is off by default. Until an author publishes a version, it cannot be
+reached without an account, and an unpublished version is indistinguishable from
+one that does not exist.
+
+**Export.** The whole version graph comes out as a `git fast-import` stream.
+`git init` followed by `git fast-import` gives you a real repository with the
+branches, merge commits, authors and dates intact. This matters more than it
+sounds: work that cannot leave a tool is hostage to it.
+
+**File sharing.** Upload into a room and the file appears alongside its
+messages. Downloads go through an authenticated route that checks an access
+list captured at upload time. Nothing is served from a public path, and a
+request for a file you cannot see returns the same 404 as a file that does not
+exist.
+
+> Authorship comes from the JWT, never from the request body. A version can only
+> be attributed to the account that actually saved it. The history is the whole
+> point here, and a history that can be forged is worth nothing.
+
+Prose is stored as Markdown rather than as editor JSON. That choice is what
+keeps diffs, merges and conflict blocks readable for prose as well as code, and
+it means the work leaves in a format that will outlive this project.
 
 ## How it fits together
 
 ```
 frontend (React 17 + Redux)            backend (Express + Socket.IO)
-  authPages/        login, register        routes/           auth, invitations,
-  Dashboard/                                                 code, files
-    FriendsSideBar/ friends, invites       controllers/      register, login, invite,
-    Messenger/      direct chat                              code, codeComment, file
-    Room/           video grid, chat       socketHandlers/   9 room handlers
-  shared/components/                                         + codeCollabHandler
-    CodeEditorPanel monaco + diffs         middleware/       auth, identity
-  realtimeCommunication/                   models/           user, message, conversation,
-    socketConnection  socket lifecycle                       friendInvitation, codeVersion,
-    webRTCHandler     simple-peer wrapper                    codeComment, vcFile, vcMessage
-    roomHandler       room state
-  store/            5 slices, thunks              MongoDB Atlas
+  authPages/        login, register      routes/          auth, invitations,
+  Dashboard/                                              code, files, public
+    FriendsSideBar/ friends, invites     controllers/     register, login, invite,
+    Messenger/      direct chat                           code, codeComment, file
+    Room/           video grid, chat     socketHandlers/  9 room handlers
+  shared/components/                                      + codeCollabHandler
+    CodeEditorPanel monaco + collab      middleware/      auth, identity,
+    ProseEditorPanel tiptap                               asyncHandler, errorHandler
+    editor/         history, branches,   utils/           threeWayMerge, versionGraph,
+                    comments, diffs                       citation, gitExport
+  realtimeCommunication/                 models/          user, message, conversation,
+    socketConnection, webRTCHandler,                      friendInvitation, codeVersion,
+    roomHandler                                           codeComment, vcFile, vcMessage
+  store/            5 slices, thunks           MongoDB
 ```
 
-**REST handles the things that need to be durable** — registration, login,
-invitations. **Sockets handle everything live** — presence, messages, room
-membership, and WebRTC signalling. The socket connection authenticates with the
-same JWT the REST client uses.
+REST handles what has to be durable: registration, login, invitations, versions,
+files. Sockets handle what has to be live: presence, messages, room membership,
+CRDT updates, and WebRTC signalling. Both authenticate with the same JWT.
+
+The server never touches media. It relays signalling only, and audio and video
+go directly between browsers.
 
 ### Socket events
 
 | Handler | Purpose |
 |---|---|
-| `newConnectionHandler` | Register the socket, broadcast presence, push friends + pending invitations |
+| `newConnectionHandler` | Register the socket, broadcast presence, push friends and pending invitations |
 | `disconnectHandler` | Tear down, mark offline, remove from any active room |
-| `directMessageHandler` | Persist a message, deliver to the recipient if connected |
+| `directMessageHandler` | Persist a message, deliver it if the recipient is connected |
 | `directChatHistoryHandler` | Load and stream a conversation's history |
-| `roomCreateHandler` | Open a new room with the creator as first participant |
+| `roomCreateHandler` | Open a room with the creator as its first participant |
 | `roomJoinHandler` | Add a participant and tell existing members to prepare connections |
-| `roomLeaveHandler` | Remove a participant, notify the rest |
-| `roomInitializeConnectionHandler` | Trigger peer-connection setup for a new arrival |
-| `roomSignalingDataHandler` | Relay SDP offers/answers and ICE candidates between peers |
-
-The server never touches media. It relays signalling only; audio and video flow
-directly between browsers.
+| `roomLeaveHandler` | Remove a participant and notify the rest |
+| `roomInitializeConnectionHandler` | Trigger peer connection setup for a new arrival |
+| `roomSignalingDataHandler` | Relay SDP offers, answers and ICE candidates |
+| `codeCollabHandler` | Relay Yjs document updates and awareness between everyone in a session |
 
 ## Tech
 
-**Frontend** — React 17, Redux Toolkit + thunk, React Router 5, MUI 5,
-socket.io-client, simple-peer, RecordRTC, axios, Monaco, Yjs + y-monaco
-**Backend** — Node, Express 4, Socket.IO 4, Mongoose 6, bcryptjs, jsonwebtoken,
-Joi via express-joi-validation, Yjs
-**Data** — MongoDB Atlas · **Hosting** — Vercel (frontend and API deployed separately)
+**Frontend.** React 17, Redux Toolkit with thunk, React Router 5, MUI 5,
+socket.io-client, simple-peer, RecordRTC, axios, Monaco, TipTap, Yjs with
+y-monaco and y-prosemirror.
 
-## Running it locally
+**Backend.** Node, Express 4, Socket.IO 4, Mongoose 6, bcryptjs, jsonwebtoken,
+Joi through express-joi-validation, node-diff3, Yjs.
 
-You need Node 16+ and a MongoDB connection string (Atlas free tier is fine).
+**Data.** MongoDB. **Hosting.** Vercel, frontend and API deployed separately.
+
+## Running it
+
+You need Node 16 or later.
 
 ```bash
 git clone https://github.com/CoderSoham/FSD-Project.git
 cd FSD-Project
 ```
 
-**Backend:**
+### The quick way, with no database
+
+```bash
+cd backend && npm install && npm run dev
+```
+
+This starts a throwaway in-memory MongoDB, seeds it, and runs the API against
+it. No `.env` needed.
+
+The seed creates four accounts that are already friends with each other, because
+a fresh database is useless for actually trying this: you cannot message anyone,
+call anyone, or test collaborative editing, and registering two accounts and
+exchanging invitations before every test is enough friction to stop you testing
+at all.
+
+```
+ada@example.com  grace@example.com  alan@example.com  katherine@example.com
+password: devpassword
+```
+
+It also seeds `paper.md` with history on `main` and a `results` branch, so the
+version list, the diff and the merge have something in them. Sign in as two
+different people in two browser profiles to exercise the realtime paths.
+
+Everything is discarded when you stop it, which is the point.
+
+### With your own database
 
 ```bash
 cd backend && npm install && cp .env.example .env
 ```
 
-Fill in `.env` — see [backend/.env.example](backend/.env.example) for the three
-keys. Generate the JWT secret with `openssl rand -base64 48`. Then:
+Fill in `.env`. See [backend/.env.example](backend/.env.example) for the three
+keys, and generate the JWT secret with `openssl rand -base64 48`. Then
+`npm start`.
 
-```bash
-npm start
-```
+If the API starts but every request comes back 503, the database is unreachable.
+`GET /healthz` says which of the two is unhappy.
 
-**No MongoDB to hand?** This starts a throwaway in-memory database, seeds it,
-and runs the API against it — no `.env` needed:
+### The frontend
 
-```bash
-npm run dev
-```
-
-It creates four accounts that are already friends with each other, so you can
-test calls, screen share and collaborative editing immediately instead of
-registering two users and exchanging invitations first:
-
-| | |
-|---|---|
-| `ada@example.com` · `grace@example.com` · `alan@example.com` · `katherine@example.com` | password `devpassword` |
-
-It also seeds `paper.md` with history on `main` and a `results` branch, so the
-version list, diff and merge have something in them. Open two browser profiles
-and sign in as two different people to exercise the realtime paths.
-
-Data is discarded when you stop it, which is the point.
-
-If the API starts but every request returns 503, the database is unreachable.
-`GET /healthz` reports which of the two is unhappy.
-
-Run the tests with `npm test` in `backend/`. The integration suite downloads a
-MongoDB binary on first run and skips itself if that is unavailable.
-
-**Frontend**, in a second terminal:
+In a second terminal:
 
 ```bash
 cd frontend && npm install && npm start
 ```
 
-Opens on `http://localhost:3000` and talks to the API on `:5002`. To try video,
-open a second browser profile or an incognito window and register a second
-account — WebRTC needs two real peers.
+It opens on port 3000 and talks to the API on 5002.
+
+## Tests
+
+Three layers, because each one catches things the others cannot see.
+
+```bash
+cd backend && npm test          # 8 suites
+cd frontend && npm run test:ci  # 98 tests
+npx playwright test             # 49 tests, starts both servers itself
+```
+
+**Backend.** Six acceptance suites, one per feature, plus an integration suite
+that boots the real Express app against an in-memory MongoDB and drives the HTTP
+surface, plus an adversarial suite of about thirty malformed and hostile
+requests. That last one exists because a single bad ObjectId used to terminate
+the API process for everyone.
+
+**Frontend.** React Testing Library over the extracted editor components, the
+validators, the API error messages, the Markdown conversion, the citation page,
+and the video tile.
+
+**End to end.** Playwright, starting both servers itself against the seeded
+in-memory database, so a run needs no setup. This layer earns its keep. It
+covers two browsers editing one document and converging, an edit made offline
+arriving on reconnect, the full branch and merge flow through the interface, a
+citation page opening in a browser that has never signed in, upload and download
+permissions, video tiles with a real MediaStream from a fake camera, and a
+design suite that measures WCAG AA contrast on every visible text node in both
+themes.
+
+It was worth building for one reason in particular. Collaborative editing had
+unit tests proving the CRDT converged, a working server relay, and a Monaco
+binding, and it had never been connected to the interface at all. Opening the
+editor joined no session. Four separate faults, each one enough on its own, and
+none of them visible from a Node process. A feature can be implemented, tested
+and documented and still not exist from the user's point of view.
 
 ## Known limitations
 
-These are real and worth knowing before you judge the code:
+Worth knowing before judging the code.
 
-- **STUN only, no TURN.** `webRTCHandler.js` configures Google's public STUN
-  server and leaves the TURN branch as a TODO. Peers behind symmetric NAT or a
-  restrictive corporate firewall will fail to connect. A production deployment
-  needs a TURN relay (coturn, or a hosted service).
-- **Mesh topology.** Every participant opens a peer connection to every other
-  one, so connections grow as O(n²). Fine for a handful of people, unworkable
-  past roughly six. An SFU (mediasoup, LiveKit) is the fix.
-- **Recording is client-side and unencrypted.** RecordRTC captures the local
-  stream and `file-saver` writes it to disk. There is no consent prompt for the
-  other participants.
-- **Sockets are untested end to end.** `npm test` runs six unit suites plus an
-  integration suite that boots the real Express app against an in-memory
-  MongoDB and drives the HTTP surface. The WebRTC and socket layers still have
-  no automated coverage.
-- **CORS is pinned to a single origin** in `server.js`, so a local
-  frontend talking to the deployed API will be rejected. Run both locally or
-  both deployed.
+**STUN only, no TURN.** `webRTCHandler.js` uses Google's public STUN server and
+leaves TURN as a TODO. Anyone behind symmetric NAT or a restrictive corporate
+firewall will fail to connect. A real deployment needs a relay, either coturn or
+something hosted.
+
+**Mesh topology.** Everyone opens a connection to everyone else, so connections
+grow with the square of the number of participants. Fine for a few people,
+unworkable past about six. An SFU such as mediasoup or LiveKit is the fix, and a
+research group meeting is exactly the case that needs it.
+
+**Recording has no consent prompt.** RecordRTC captures the local stream and
+writes it to disk. The other participants are not asked and not told.
+
+**The peer to peer leg of a call is not covered by tests.** `call.spec.js`
+covers acquiring a stream, painting it into a tile, and toggling the right
+track. Two browsers actually completing an ICE negotiation through the
+signalling server is still only tested by hand.
+
+**CORS is pinned to one origin** in `server.js`, so a local frontend cannot talk
+to the deployed API. Run both locally or both deployed.
 
 ## Security note
 
-An earlier version of this repository committed `backend/.env`, exposing a
-MongoDB connection string and the JWT signing secret. Those credentials have
-been rotated and the file removed from history. `.env` is now gitignored;
-[backend/.env.example](backend/.env.example) documents the required keys without
-values.
+An earlier version of this repository committed `backend/.env`, which exposed a
+MongoDB connection string and the JWT signing secret. The file has been removed
+from the tracked history and `.env` is now gitignored;
+[backend/.env.example](backend/.env.example) documents the keys without values.
+
+Two things are worth being straight about. **The exposed database credential has
+not been rotated.** The cluster it pointed at is paused and has no billing
+attached, so the assessed risk is low, but rotation is the only actual fix and
+it has not happened. Second, a history purge does not fully undo a public leak:
+orphaned commit SHAs can still be served for a while, and anyone who forked the
+repository has their own copy. Treat any credential that has been pushed to a
+public repository as burned.
 
 ## Licence
 
-No licence yet — see the repository owner before reuse.
+No licence yet. Ask before reusing.

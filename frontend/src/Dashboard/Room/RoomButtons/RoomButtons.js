@@ -27,7 +27,6 @@ const MainContainer = styled("div")({
 const RoomButtons = (props) => {
   const [isRecording, setIsRecording] = useState(false);
   const [recorder, setRecorder] = useState();
-  const [stream, setStream] = useState();
   const [videoBlob, setVideoUrlBlob] = useState();
   const [isDownloadable, setIsDownloadable] = useState(false);
   const { localStream, isUserJoinedWithOnlyAudio } = props;
@@ -43,7 +42,6 @@ const RoomButtons = (props) => {
 
     await recorder.startRecording();
     setRecorder(recorder);
-    setStream(stream);
     setVideoUrlBlob(null);
   };
 
@@ -58,7 +56,6 @@ const RoomButtons = (props) => {
       // camera and microphone for the call itself, not just the recording.
       setVideoUrlBlob(blob);
       VIDEO_BLOB = blob;
-      setStream(null);
       setRecorder(null);
       setIsDownloadable(true);
     }

@@ -13,9 +13,6 @@ disagrees with both.
 **Live:** https://fsd-project-mu.vercel.app
 **API:** https://fsd-project-api.vercel.app
 
-Built as the Full Stack Development course project at MIT World Peace
-University, October to November 2024, and extended well past it since.
-
 ## What it does
 
 ### Talking to people
@@ -144,8 +141,8 @@ Joi through express-joi-validation, node-diff3, Yjs.
 You need Node 16 or later.
 
 ```bash
-git clone https://github.com/CoderSoham/FSD-Project.git
-cd FSD-Project
+git clone https://github.com/CoderSoham/GitCord.git
+cd GitCord
 ```
 
 ### The quick way, with no database

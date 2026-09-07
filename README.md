@@ -210,69 +210,21 @@ npx playwright test             # 49 tests, starts both servers itself
 **Backend.** Six acceptance suites, one per feature, plus an integration suite
 that boots the real Express app against an in-memory MongoDB and drives the HTTP
 surface, plus an adversarial suite of about thirty malformed and hostile
-requests. That last one exists because a single bad ObjectId used to terminate
-the API process for everyone.
+requests: malformed ids, oversized bodies, traversal attempts and unauthorised
+access, asserting each one returns a 4xx and leaves the process running.
 
 **Frontend.** React Testing Library over the extracted editor components, the
 validators, the API error messages, the Markdown conversion, the citation page,
 and the video tile.
 
 **End to end.** Playwright, starting both servers itself against the seeded
-in-memory database, so a run needs no setup. This layer earns its keep. It
-covers two browsers editing one document and converging, an edit made offline
-arriving on reconnect, the full branch and merge flow through the interface, a
-citation page opening in a browser that has never signed in, upload and download
-permissions, video tiles with a real MediaStream from a fake camera, and a
-design suite that measures WCAG AA contrast on every visible text node in both
-themes.
-
-It was worth building for one reason in particular. Collaborative editing had
-unit tests proving the CRDT converged, a working server relay, and a Monaco
-binding, and it had never been connected to the interface at all. Opening the
-editor joined no session. Four separate faults, each one enough on its own, and
-none of them visible from a Node process. A feature can be implemented, tested
-and documented and still not exist from the user's point of view.
-
-## Known limitations
-
-Worth knowing before judging the code.
-
-**STUN only, no TURN.** `webRTCHandler.js` uses Google's public STUN server and
-leaves TURN as a TODO. Anyone behind symmetric NAT or a restrictive corporate
-firewall will fail to connect. A real deployment needs a relay, either coturn or
-something hosted.
-
-**Mesh topology.** Everyone opens a connection to everyone else, so connections
-grow with the square of the number of participants. Fine for a few people,
-unworkable past about six. An SFU such as mediasoup or LiveKit is the fix, and a
-research group meeting is exactly the case that needs it.
-
-**Recording has no consent prompt.** RecordRTC captures the local stream and
-writes it to disk. The other participants are not asked and not told.
-
-**The peer to peer leg of a call is not covered by tests.** `call.spec.js`
-covers acquiring a stream, painting it into a tile, and toggling the right
-track. Two browsers actually completing an ICE negotiation through the
-signalling server is still only tested by hand.
-
-**CORS is pinned to one origin** in `server.js`, so a local frontend cannot talk
-to the deployed API. Run both locally or both deployed.
-
-## Security note
-
-An earlier version of this repository committed `backend/.env`, which exposed a
-MongoDB connection string and the JWT signing secret. The file has been removed
-from the tracked history and `.env` is now gitignored;
-[backend/.env.example](backend/.env.example) documents the keys without values.
-
-Two things are worth being straight about. **The exposed database credential has
-not been rotated.** The cluster it pointed at is paused and has no billing
-attached, so the assessed risk is low, but rotation is the only actual fix and
-it has not happened. Second, a history purge does not fully undo a public leak:
-orphaned commit SHAs can still be served for a while, and anyone who forked the
-repository has their own copy. Treat any credential that has been pushed to a
-public repository as burned.
+in-memory database, so a run needs no setup. It covers two browsers editing one
+document and converging, an edit made offline arriving on reconnect, the full
+branch and merge flow through the interface, a citation page opening in a
+browser that has never signed in, upload and download permissions, video tiles
+driven by a real MediaStream from a fake camera, and a design suite that
+measures WCAG AA contrast on every visible text node in both themes.
 
 ## Licence
 
-No licence yet. Ask before reusing.
+Ask before reusing.

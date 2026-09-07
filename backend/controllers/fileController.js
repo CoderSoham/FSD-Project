@@ -6,15 +6,37 @@ const VCMessage = require('../models/vcMessage');
 const serverStore = require('../serverStore');
 const { canAccessFile, resolveStoredPath } = require('../utils/fileAccess');
 
-const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
+/**
+ * Where uploads land.
+ *
+ * On a normal server this is `backend/uploads`. On a serverless host the
+ * project directory is read only and `/tmp` is the only writable place, so
+ * that is where it goes. Files there do not survive a cold start, which is a
+ * real limitation of deploying this on serverless rather than a bug, and it is
+ * written down in the README.
+ */
+const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+const UPLOAD_DIR =
+  process.env.UPLOAD_DIR ||
+  (isServerless ? path.join('/tmp', 'uploads') : path.join(__dirname, '..', 'uploads'));
 
 /**
  * The uploads directory is not in the repository, and should not be: it holds
- * other people's files. But nothing created it either, so on a fresh clone
- * multer had nowhere to write and every upload came back as an opaque 500.
- * Create it once, at load.
+ * other people's files. Nothing created it either, so on a fresh clone multer
+ * had nowhere to write and every upload came back as an opaque 500.
+ *
+ * This must never throw. It runs at require time, so a failure here does not
+ * break uploads, it stops the entire API from loading and every route returns
+ * 500 on a cold start. One broken feature is better than no server.
  */
-fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+try {
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+} catch (err) {
+  console.error(
+    `Could not create the upload directory at ${UPLOAD_DIR}: ${err.message}. ` +
+    `File uploads will fail; everything else still works.`
+  );
+}
 
 /**
  * Everyone who may later fetch a file uploaded into this room.

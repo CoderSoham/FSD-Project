@@ -8,6 +8,7 @@ import { connectCollabSession } from "../utils/collabSession";
 import { htmlToMarkdown, markdownToHtml, hasConflictMarkers } from "../utils/prose";
 import { saveCodeVersion, getCodeHistory, getCodeVersion, setVersionCitable } from "../../api";
 import { notifySuccess, notifyError, notifyWarning } from "../utils/notification";
+import VersionHistoryList from "./editor/VersionHistoryList";
 
 /**
  * Collaborative prose editor for papers and notes.
@@ -50,7 +51,7 @@ const ProseEditorPanel = ({ open, onClose, filename, sessionId, user, branch = "
     if (!open || !sessionId) return;
     const s = connectCollabSession({ sessionId, user });
     if (!s) {
-      notifyError("Not connected — open a room first.");
+      notifyError("Not connected. Open a room first.");
       return;
     }
     setSession(s);
@@ -199,36 +200,32 @@ const ProseEditorPanel = ({ open, onClose, filename, sessionId, user, branch = "
 
         {history.length > 0 && (
           <div className="panel__footer">
-            <div className="subtle" style={{ fontSize: "var(--text-xs)", marginBottom: "var(--space-2)" }}>
-              Saved versions
-            </div>
-            {history.map((v) => (
-              <div className="list-row" key={v._id}>
-                <span className="list-row__meta">
-                  {new Date(v.timestamp).toLocaleString()} &middot; {v.username} &middot;{" "}
-                  <span className="mono">{v.branch}</span>
-                  {v.hasConflicts && (
-                    <span className="badge badge--danger" style={{ marginLeft: "var(--space-2)" }}>
-                      {v.conflictCount} conflict{v.conflictCount === 1 ? "" : "s"}
-                    </span>
-                  )}
-                </span>
-                <span style={{ display: "flex", gap: "var(--space-1)" }}>
+            <VersionHistoryList
+              versions={history}
+              layout="rows"
+              title="Saved versions"
+              renderActions={(v) => (
+                <>
                   <button
                     className={`btn btn--sm ${v.citable ? "btn--on" : "btn--quiet"}`}
                     onClick={() => handleCite(v)}
-                    title={v.citable ? "Published. Click to unpublish." : "Publish so this version can be cited"}
+                    title={
+                      v.citable
+                        ? "Published. Click to unpublish."
+                        : "Publish so this version can be cited"
+                    }
                   >
                     {v.citable ? "Cited" : "Cite"}
                   </button>
                   <button className="btn btn--sm btn--quiet" onClick={() => handleRestore(v._id)}>
                     Load
                   </button>
-                </span>
-              </div>
-            ))}
+                </>
+              )}
+            />
           </div>
         )}
+
       </div>
     </Rnd>
   );

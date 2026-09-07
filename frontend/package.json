@@ -9,9 +9,6 @@
     "@mui/icons-material": "^5.2.5",
     "@mui/material": "^5.0.3",
     "@reduxjs/toolkit": "^1.6.2",
-    "@testing-library/jest-dom": "^4.2.4",
-    "@testing-library/react": "^9.5.0",
-    "@testing-library/user-event": "^7.2.1",
     "@tiptap/extension-collaboration": "^3.30.5",
     "@tiptap/extension-collaboration-caret": "^3.30.5",
     "@tiptap/pm": "^3.30.5",
@@ -45,7 +42,8 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "test:ci": "CI=true react-scripts test --watchAll=false"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -60,6 +58,18 @@
       "last 1 chrome version",
       "last 1 firefox version",
       "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@babel/core": "^7.29.7",
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^12.1.5",
+    "@testing-library/user-event": "^13.5.0"
+  },
+  "jest": {
+    "transformIgnorePatterns": [
+      "[/\\\\]node_modules[/\\\\](?!marked[/\\\\])[^/\\\\]+[/\\\\].+\\.(js|mjs|jsx|ts|tsx)$",
+      "^.+\\.module\\.(css|sass|scss)$"
     ]
   }
 }

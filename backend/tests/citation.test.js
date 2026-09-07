@@ -1,5 +1,5 @@
 /**
- * FEAT-005 acceptance test — content hashing and citation formatting.
+ * FEAT-005 acceptance test: content hashing and citation formatting.
  *
  * The claim being verified: a reader who follows a citation can confirm the
  * text they are looking at is the text that was cited, without trusting this

@@ -1,5 +1,5 @@
 /**
- * FEAT-003 acceptance test — file access rules and path containment.
+ * FEAT-003 acceptance test: file access rules and path containment.
  *
  * The regression this guards against: `/uploads` was mounted with
  * express.static, so anyone who learned a filename could fetch an unpublished

@@ -1,5 +1,5 @@
 /**
- * FEAT-004 acceptance test — prose documents inherit the versioning stack.
+ * FEAT-004 acceptance test: prose documents inherit the versioning stack.
  *
  * The design claim being verified: because prose is versioned as Markdown
  * rather than ProseMirror JSON, every feature built for code applies to it

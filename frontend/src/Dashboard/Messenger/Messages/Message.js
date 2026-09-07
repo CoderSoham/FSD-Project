@@ -68,7 +68,7 @@ function renderFilePreview(content) {
     const filename = content.split("/").pop();
     return (
       <span style={{ color: "var(--text-muted)", fontStyle: "italic" }} title={filename}>
-        {filename} — shared before secure downloads, no longer retrievable
+        {filename} was shared before secure downloads and can no longer be retrieved
       </span>
     );
   }

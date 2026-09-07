@@ -233,7 +233,7 @@ const request = (server, method, path, { token, body, raw } = {}) =>
   }
 
   if (failures) {
-    console.log(`\n${failures} edge case(s) FAILED — these are the bugs:`);
+    console.log(`\n${failures} edge case(s) FAILED. These are the bugs:`);
     found.forEach((f) => console.log("  •", f));
   } else {
     console.log("\nAll edge-case checks passed.");

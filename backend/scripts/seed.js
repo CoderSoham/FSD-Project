@@ -87,7 +87,7 @@ const describe = (result) => {
     return;
   }
   console.log("\n  Seeded a development database.\n");
-  console.log("  Sign in as any of these — they are all friends with each other:\n");
+  console.log("  Sign in as any of these. They are all friends with each other:\n");
   PEOPLE.forEach((p) => console.log(`    ${p.mail.padEnd(22)} ${PASSWORD}`));
   console.log("\n  Open two browser profiles and sign in as two different people");
   console.log("  to try calls, screen share and the collaborative editor.\n");

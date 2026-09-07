@@ -2,13 +2,27 @@ import React, { useRef, useState, useEffect, useMemo } from "react";
 import MonacoEditor, { loader } from "@monaco-editor/react";
 import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
 
-import DiffViewer from "react-diff-viewer";
-import { saveCodeVersion, getCodeHistory, getCodeVersion, createBranch, getBranches, mergeBranches, addCodeComment, getCodeComments, deleteCodeComment } from '../../api';
-import { connectCollabSession } from '../utils/collabSession';
-import { MonacoBinding } from 'y-monaco';
-import { Rnd } from 'react-rnd';
-import './CodeEditorPanel.css';
-import { notifySuccess, notifyError, notifyWarning } from '../utils/notification';
+import {
+  saveCodeVersion,
+  getCodeHistory,
+  getCodeVersion,
+  createBranch,
+  getBranches,
+  mergeBranches,
+  addCodeComment,
+  getCodeComments,
+  deleteCodeComment,
+} from "../../api";
+import { connectCollabSession } from "../utils/collabSession";
+import { MonacoBinding } from "y-monaco";
+import { Rnd } from "react-rnd";
+import "./CodeEditorPanel.css";
+import { notifySuccess, notifyError, notifyWarning } from "../utils/notification";
+import VersionHistoryList from "./editor/VersionHistoryList";
+import BranchControls from "./editor/BranchControls";
+import ConflictBanner from "./editor/ConflictBanner";
+import DiffPane from "./editor/DiffPane";
+import { CommentList, CommentComposer } from "./editor/CommentLayer";
 
 // Use the bundled Monaco rather than the CDN copy @monaco-editor/react loads by
 // default. y-monaco imports monaco-editor directly, and two separate Monaco
@@ -34,17 +48,46 @@ const minPanelHeight = 320;
 const maxPanelWidth = window.innerWidth - 32;
 const maxPanelHeight = window.innerHeight - 32;
 
+const isDark = () =>
+  document.documentElement.getAttribute("data-theme") === "dark";
+
+/**
+ * The code editor panel.
+ *
+ * What is left here is composition and the collaborative binding. Version
+ * history, branch controls, comments, the conflict banner and the diff view all
+ * live in ./editor and are shared with the prose editor where they apply. This
+ * file was 807 lines and could not be tested as anything smaller than a browser.
+ */
 const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange, sessionId }) => {
   const fileInputRef = useRef();
   const [filename, setFilename] = useState("code.js");
 
   const [history, setHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
-  const [diffView, setDiffView] = useState(null); // { oldVersion, newVersion }
+  const [diffView, setDiffView] = useState(null);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [saving, setSaving] = useState(false);
   const [branches, setBranches] = useState(["main"]);
   const [currentBranch, setCurrentBranch] = useState("main");
+  const [compareDiff, setCompareDiff] = useState(null);
+  const [mergeResult, setMergeResult] = useState(null);
+
+  const [comments, setComments] = useState([]);
+  const [commentInput, setCommentInput] = useState("");
+  const [commentPos, setCommentPos] = useState(null);
+
+  const editorRef = useRef();
+  const [editorReady, setEditorReady] = useState(false);
+  const [panelSize, setPanelSize] = useState({
+    width: 0.7 * window.innerWidth,
+    height: 0.7 * window.innerHeight,
+  });
+  const [panelPos, setPanelPos] = useState({
+    x: window.innerWidth * 0.15,
+    y: window.innerHeight * 0.15,
+  });
+
   /**
    * Which shared document this editor is bound to.
    *
@@ -57,10 +100,7 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
    * and the only one that makes the feature useful.
    */
   const collabSessionId = sessionId || `doc:${filename}:${currentBranch}`;
-  const [newBranchName, setNewBranchName] = useState("");
-  const [mergeSource, setMergeSource] = useState("");
-  const [compareBranch, setCompareBranch] = useState("");
-  const [compareDiff, setCompareDiff] = useState(null); // { oldContent, newContent, oldBranch, newBranch }
+
   /**
    * The signed in user.
    *
@@ -72,18 +112,12 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
    * document was wiped before a single character could be committed to it.
    */
   const user = useMemo(() => {
-    try { return JSON.parse(localStorage.getItem("user") || "{}"); }
-    catch { return {}; }
+    try {
+      return JSON.parse(localStorage.getItem("user") || "{}");
+    } catch {
+      return {};
+    }
   }, []);
-  const [comments, setComments] = useState([]);
-  const [commentInput, setCommentInput] = useState("");
-  const [commentPos, setCommentPos] = useState(null); // {startLine, startColumn, endLine, endColumn}
-  const [showCommentBox, setShowCommentBox] = useState(false);
-  const editorRef = useRef();
-  const [editorReady, setEditorReady] = useState(false);
-  const [mergeResult, setMergeResult] = useState(null);
-  const [panelSize, setPanelSize] = useState({ width: 0.7 * window.innerWidth, height: 0.7 * window.innerHeight });
-  const [panelPos, setPanelPos] = useState({ x: window.innerWidth * 0.15, y: window.innerHeight * 0.15 });
 
   // Every /api/code call requires a token. Firing them before the user has one
   // produced a pair of 403s in the console on the login and register screens,
@@ -106,7 +140,7 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
   }, [signedIn, filename, currentBranch, history]);
 
   // Collaborative editing is bound to the Monaco model by Yjs, so there is no
-  // onChange plumbing here at all -- the CRDT owns the document text and the
+  // onChange plumbing here at all. The CRDT owns the document text and the
   // binding applies remote edits directly to the model.
   useEffect(() => {
     if (!collabSessionId || !open || !editorReady || !editorRef.current) return;
@@ -115,7 +149,7 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
 
     // The transport is shared with the prose editor; only the binding differs.
     const binding = new MonacoBinding(
-      session.doc.getText('code'),
+      session.doc.getText("code"),
       editorRef.current.getModel(),
       new Set([editorRef.current]),
       session.awareness
@@ -130,7 +164,7 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
   const fetchHistory = async () => {
     setLoadingHistory(true);
     const res = await getCodeHistory(filename);
-    if (!res.error) setHistory(res.filter(v => v.branch === currentBranch));
+    if (!res.error) setHistory(res.filter((v) => v.branch === currentBranch));
     setLoadingHistory(false);
   };
 
@@ -139,34 +173,13 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
     if (!res.error && Array.isArray(res)) setBranches(res);
   };
 
-  // Download code as file
-  const handleDownload = () => {
-    const lang = LANGUAGES.find(l => l.value === language) || LANGUAGES[0];
-    const blob = new Blob([readContent()], { type: "text/plain" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename || `code.${lang.ext}`;
-    a.click();
-    window.URL.revokeObjectURL(url);
+  const fetchComments = async () => {
+    const params = { filename, branch: currentBranch };
+    if (history.length > 0) params.codeVersionId = history[0]._id;
+    const res = await getCodeComments(params);
+    if (!res.error) setComments(res);
   };
 
-  // Upload code from file
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setFilename(file.name);
-    const ext = file.name.split('.').pop();
-    const lang = LANGUAGES.find(l => l.ext === ext);
-    if (lang && setLanguage) setLanguage(lang.value);
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      if (onChange) onChange(evt.target.result);
-    };
-    reader.readAsText(file);
-  };
-
-  // Save code version
   /**
    * The current text.
    *
@@ -178,8 +191,35 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
     try {
       const fromEditor = editorRef.current?.getValue();
       if (typeof fromEditor === "string") return fromEditor;
-    } catch (e) { /* editor not mounted yet */ }
+    } catch (e) {
+      /* editor not mounted yet */
+    }
     return value || "";
+  };
+
+  const handleDownload = () => {
+    const lang = LANGUAGES.find((l) => l.value === language) || LANGUAGES[0];
+    const blob = new Blob([readContent()], { type: "text/plain" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename || `code.${lang.ext}`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setFilename(file.name);
+    const ext = file.name.split(".").pop();
+    const lang = LANGUAGES.find((l) => l.ext === ext);
+    if (lang && setLanguage) setLanguage(lang.value);
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      if (onChange) onChange(evt.target.result);
+    };
+    reader.readAsText(file);
   };
 
   const handleSaveVersion = async () => {
@@ -192,7 +232,7 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
       userId: user?._id || "anonymous",
       username: user?.username || "anonymous",
       parentVersionId,
-      branch: currentBranch
+      branch: currentBranch,
     });
     if (!res.error) {
       setShowHistory(true);
@@ -201,33 +241,32 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
     setSaving(false);
   };
 
-  // Create new branch
-  const handleCreateBranch = async () => {
-    if (!newBranchName.trim() || history.length === 0) return;
+  const handleCreateBranch = async (name) => {
+    if (history.length === 0) return;
     const res = await createBranch({
       filename,
-      branch: newBranchName.trim(),
-      fromVersionId: history[0]._id
+      branch: name,
+      fromVersionId: history[0]._id,
     });
-    if (!res.error) {
-      setCurrentBranch(newBranchName.trim());
-      setNewBranchName("");
-      fetchBranchesList();
-      fetchHistory();
+    if (res.error) {
+      notifyError(res.error);
+      return;
     }
+    setCurrentBranch(name);
+    fetchBranchesList();
+    fetchHistory();
   };
 
-  // Merge branches.
   // The server performs a real three-way merge against the version the two
-  // branches diverged from, so conflicts are possible and must be surfaced --
-  // silently accepting a merge that contains conflict markers would leave the
+  // branches diverged from, so conflicts are possible and must be surfaced.
+  // Silently accepting a merge that contains conflict markers would leave the
   // document broken with no indication why.
-  const handleMerge = async () => {
-    if (!mergeSource || mergeSource === currentBranch) return;
+  const handleMerge = async (sourceBranch) => {
+    if (sourceBranch === currentBranch) return;
     // identity comes from the auth token server-side; sending it is pointless
     const res = await mergeBranches({
       filename,
-      sourceBranch: mergeSource,
+      sourceBranch,
       targetBranch: currentBranch,
     });
     if (res.error) {
@@ -236,62 +275,49 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
     }
     fetchHistory();
     if (res.unrelatedHistories) {
-      notifyWarning("These branches share no history — every line was treated as new.");
+      notifyWarning("These branches share no history, so every line was treated as new.");
     }
     if (res.hasConflicts) {
-      setMergeResult(res);
+      setMergeResult({ ...res, sourceBranch });
       notifyWarning(
         `Merged with ${res.conflictCount} conflict${res.conflictCount === 1 ? "" : "s"}. ` +
-        `Resolve the marked sections before saving.`
+          `Resolve the marked sections before saving.`
       );
     } else {
-      notifySuccess(`Merged ${mergeSource} into ${currentBranch}.`);
+      notifySuccess(`Merged ${sourceBranch} into ${currentBranch}.`);
     }
   };
 
-  // Show diff between two versions
   const handleShowDiff = async (oldVersionId, newVersionId) => {
     const oldV = await getCodeVersion(oldVersionId);
     const newV = await getCodeVersion(newVersionId);
     setDiffView({ old: oldV.content, new: newV.content, oldMeta: oldV, newMeta: newV });
   };
 
-  // Close diff view
-  const handleCloseDiff = () => setDiffView(null);
-
-  // Fetch history for a specific branch
   const fetchBranchHistory = async (branch) => {
     const res = await getCodeHistory(filename);
-    if (!res.error) return res.filter(v => v.branch === branch);
+    if (!res.error) return res.filter((v) => v.branch === branch);
     return [];
   };
 
-  // Compare latest versions of two branches
-  const handleCompareBranches = async () => {
-    if (!compareBranch || compareBranch === currentBranch) return;
-    const [mainHistory, otherHistory] = await Promise.all([
+  const handleCompareBranches = async (other) => {
+    if (other === currentBranch) return;
+    const [mine, theirs] = await Promise.all([
       fetchBranchHistory(currentBranch),
-      fetchBranchHistory(compareBranch)
+      fetchBranchHistory(other),
     ]);
-    if (mainHistory.length && otherHistory.length) {
-      setCompareDiff({
-        oldContent: otherHistory[0].content,
-        newContent: mainHistory[0].content,
-        oldBranch: compareBranch,
-        newBranch: currentBranch
-      });
+    if (!mine.length || !theirs.length) {
+      notifyWarning(`Nothing saved on ${!theirs.length ? other : currentBranch} yet.`);
+      return;
     }
+    setCompareDiff({
+      oldContent: theirs[0].content,
+      newContent: mine[0].content,
+      oldBranch: other,
+      newBranch: currentBranch,
+    });
   };
 
-  // Fetch comments for current file/branch/version
-  const fetchComments = async () => {
-    const params = { filename, branch: currentBranch };
-    if (history.length > 0) params.codeVersionId = history[0]._id;
-    const res = await getCodeComments(params);
-    if (!res.error) setComments(res);
-  };
-
-  // Add comment
   const handleAddComment = async () => {
     if (!commentInput.trim() || !commentPos) return;
     const res = await addCodeComment({
@@ -301,23 +327,20 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
       userId: user?._id || "anonymous",
       username: user?.username || "anonymous",
       text: commentInput.trim(),
-      position: commentPos
+      position: commentPos,
     });
     if (!res.error) {
       setCommentInput("");
       setCommentPos(null);
-      setShowCommentBox(false);
       fetchComments();
     }
   };
 
-  // Delete comment
   const handleDeleteComment = async (id) => {
     await deleteCodeComment(id);
     fetchComments();
   };
 
-  // Monaco: handle selection for comment
   const handleEditorMount = (editor, monaco) => {
     editorRef.current = editor;
     setEditorReady(true);
@@ -327,33 +350,40 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
     // and automaticLayout's observer never fires afterwards because the
     // container itself never changes size. Two frames later the layout is
     // real, so ask it to measure again.
-    const relayout = () => { try { editor.layout(); } catch (e) { /* disposed */ } };
+    const relayout = () => {
+      try {
+        editor.layout();
+      } catch (e) {
+        /* disposed */
+      }
+    };
     requestAnimationFrame(() => requestAnimationFrame(relayout));
     // rAF does not fire in a tab that is not compositing, so do not rely on it
     // alone.
     setTimeout(relayout, 60);
     setTimeout(relayout, 300);
-    editor.onMouseDown(e => {
-      if (e.target.type === monaco.editor.MouseTargetType.CONTENT_TEXT) {
-        const sel = editor.getSelection();
-        if (sel && (sel.startLineNumber !== sel.endLineNumber || sel.startColumn !== sel.endColumn)) {
-          setCommentPos({
-            startLine: sel.startLineNumber,
-            startColumn: sel.startColumn,
-            endLine: sel.endLineNumber,
-            endColumn: sel.endColumn
-          });
-          setShowCommentBox(true);
-        }
-      }
+
+    editor.onMouseDown((e) => {
+      if (e.target.type !== monaco.editor.MouseTargetType.CONTENT_TEXT) return;
+      const sel = editor.getSelection();
+      if (!sel) return;
+      const isRange =
+        sel.startLineNumber !== sel.endLineNumber || sel.startColumn !== sel.endColumn;
+      if (!isRange) return;
+      setCommentPos({
+        startLine: sel.startLineNumber,
+        startColumn: sel.startColumn,
+        endLine: sel.endLineNumber,
+        endColumn: sel.endColumn,
+      });
     });
   };
 
-  // Monaco: decorate comments
+  // Highlight the commented ranges in the editor.
   useEffect(() => {
     if (!editorRef.current || !comments.length) return;
     const editor = editorRef.current;
-    const decorations = comments.map(c => ({
+    const decorations = comments.map((c) => ({
       range: new window.monaco.Range(
         c.position.startLine,
         c.position.startColumn,
@@ -362,15 +392,14 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
       ),
       options: {
         isWholeLine: false,
-        inlineClassName: 'inline-comment-highlight',
-        hoverMessage: { value: `**${c.username}**: ${c.text}` }
-      }
+        inlineClassName: "inline-comment-highlight",
+        hoverMessage: { value: `**${c.username}**: ${c.text}` },
+      },
     }));
     editor.deltaDecorations([], decorations);
   }, [comments]);
 
   if (!open) return null;
-  const isDark = () => document.documentElement.getAttribute("data-theme") === "dark";
 
   return (
     <Rnd
@@ -385,24 +414,30 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
       onDragStop={(e, d) => {
         // Snap to the edge when released near it.
         const snap = 32;
-        let x = d.x, y = d.y;
+        let x = d.x;
+        let y = d.y;
         if (x < snap) x = 0;
         if (y < snap) y = 0;
-        if (x > window.innerWidth - panelSize.width - snap) x = window.innerWidth - panelSize.width;
-        if (y > window.innerHeight - panelSize.height - snap) y = window.innerHeight - panelSize.height;
+        if (x > window.innerWidth - panelSize.width - snap)
+          x = window.innerWidth - panelSize.width;
+        if (y > window.innerHeight - panelSize.height - snap)
+          y = window.innerHeight - panelSize.height;
         setPanelPos({ x, y });
       }}
       onResizeStop={(e, direction, ref, delta, position) => {
         setPanelSize({ width: ref.offsetWidth, height: ref.offsetHeight });
         setPanelPos(position);
         requestAnimationFrame(() => {
-          try { editorRef.current?.layout(); } catch (err) { /* disposed */ }
+          try {
+            editorRef.current?.layout();
+          } catch (err) {
+            /* disposed */
+          }
         });
       }}
       style={{ zIndex: "var(--z-panel)" }}
     >
       <div className="panel code-panel">
-
         <header className="panel__header">
           <div className="panel__title">
             <span>Code</span>
@@ -444,7 +479,9 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
             aria-label="Language"
           >
             {LANGUAGES.map((lang) => (
-              <option key={lang.value} value={lang.value}>{lang.label}</option>
+              <option key={lang.value} value={lang.value}>
+                {lang.label}
+              </option>
             ))}
           </select>
 
@@ -453,7 +490,11 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
           <button className="btn btn--quiet btn--sm" onClick={handleDownload} title="Download as a file">
             Download
           </button>
-          <button className="btn btn--quiet btn--sm" onClick={() => fileInputRef.current.click()} title="Upload a file">
+          <button
+            className="btn btn--quiet btn--sm"
+            onClick={() => fileInputRef.current.click()}
+            title="Upload a file"
+          >
             Upload
           </button>
           <input
@@ -476,165 +517,61 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
           </button>
         </div>
 
-        {/* Branch level controls, kept on their own row so the two kinds of
-            action do not compete for attention. */}
-        <div className="panel__toolbar code-panel__branches">
-          <label className="subtle code-panel__label" htmlFor="cp-branch">Branch</label>
-          <select
-            id="cp-branch"
-            className="field"
-            value={currentBranch}
-            onChange={(e) => setCurrentBranch(e.target.value)}
-          >
-            {branches.map((b) => <option key={b} value={b}>{b}</option>)}
-          </select>
+        <BranchControls
+          branches={branches}
+          currentBranch={currentBranch}
+          onSwitchBranch={setCurrentBranch}
+          onCreateBranch={handleCreateBranch}
+          onMerge={handleMerge}
+          onCompare={handleCompareBranches}
+          canBranch={history.length > 0}
+        />
 
-          <input
-            className="field code-panel__newbranch"
-            value={newBranchName}
-            onChange={(e) => setNewBranchName(e.target.value)}
-            placeholder="New branch name"
-            aria-label="New branch name"
-          />
-          <button
-            className="btn btn--quiet btn--sm"
-            onClick={handleCreateBranch}
-            disabled={!newBranchName.trim() || history.length === 0}
-            title="Branch from the current version"
-          >
-            Create
-          </button>
-
-          <span className="toolbar__sep" />
-
-          <select
-            className="field"
-            value={mergeSource}
-            onChange={(e) => setMergeSource(e.target.value)}
-            aria-label="Branch to merge in"
-          >
-            <option value="">Merge from</option>
-            {branches.filter((b) => b !== currentBranch).map((b) => (
-              <option key={b} value={b}>{b}</option>
-            ))}
-          </select>
-          <button
-            className="btn btn--quiet btn--sm"
-            onClick={handleMerge}
-            disabled={!mergeSource || mergeSource === currentBranch}
-          >
-            Merge
-          </button>
-
-          <span className="toolbar__sep" />
-
-          <select
-            className="field"
-            value={compareBranch}
-            onChange={(e) => setCompareBranch(e.target.value)}
-            aria-label="Branch to compare against"
-          >
-            <option value="">Compare with</option>
-            {branches.filter((b) => b !== currentBranch).map((b) => (
-              <option key={b} value={b}>{b}</option>
-            ))}
-          </select>
-          <button
-            className="btn btn--quiet btn--sm"
-            onClick={handleCompareBranches}
-            disabled={!compareBranch || compareBranch === currentBranch}
-          >
-            Compare
-          </button>
-        </div>
-
-        {mergeResult?.hasConflicts && (
-          <div className="notice notice--danger">
-            <span>
-              <strong>{mergeResult.conflictCount}</strong> unresolved
-              conflict{mergeResult.conflictCount === 1 ? "" : "s"} from merging{" "}
-              <strong>{mergeSource}</strong>. Search for <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> and
-              resolve each block before saving.
-            </span>
-            <button className="btn btn--ghost btn--sm" onClick={() => setMergeResult(null)}>
-              Dismiss
-            </button>
-          </div>
-        )}
+        <ConflictBanner
+          count={mergeResult?.hasConflicts ? mergeResult.conflictCount : 0}
+          sourceBranch={mergeResult?.sourceBranch}
+          onDismiss={() => setMergeResult(null)}
+        />
 
         <div className="code-panel__main">
           {showHistory && (
             <aside className="code-panel__history">
-              <div className="code-panel__history-head">Version history</div>
-              {loadingHistory ? (
-                <div className="empty-state">Loading</div>
-              ) : history.length === 0 ? (
-                <div className="empty-state">No versions saved yet</div>
-              ) : (
-                history.map((v, idx) => (
-                  <div
-                    key={v._id}
-                    className={`code-panel__version${idx === 0 ? " code-panel__version--current" : ""}`}
-                  >
-                    <div className="code-panel__version-top">
-                      <span>{v.username}</span>
-                      {idx === 0 && <span className="badge badge--accent">current</span>}
-                    </div>
-                    <div className="list-row__meta">
-                      {new Date(v.timestamp).toLocaleString()}
-                    </div>
-                    {v.hasConflicts && (
-                      <span className="badge badge--danger">
-                        {v.conflictCount} conflict{v.conflictCount === 1 ? "" : "s"}
-                      </span>
-                    )}
-                    {idx > 0 && (
-                      <button
-                        className="btn btn--quiet btn--sm"
-                        onClick={() => handleShowDiff(v._id, history[idx - 1]._id)}
-                      >
-                        View diff
-                      </button>
-                    )}
-                  </div>
-                ))
-              )}
+              <VersionHistoryList
+                versions={history}
+                loading={loadingHistory}
+                renderActions={(v, idx) =>
+                  idx > 0 && (
+                    <button
+                      className="btn btn--quiet btn--sm"
+                      onClick={() => handleShowDiff(v._id, history[idx - 1]._id)}
+                    >
+                      View diff
+                    </button>
+                  )
+                }
+              />
             </aside>
           )}
 
           <div className="code-panel__editor">
             {diffView ? (
-              <div className="code-panel__diff">
-                <div className="code-panel__diff-head">
-                  <span>
-                    {diffView.oldMeta?.username} to {diffView.newMeta?.username}
-                  </span>
-                  <button className="btn btn--quiet btn--sm" onClick={handleCloseDiff}>Close</button>
-                </div>
-                <DiffViewer
-                  oldValue={diffView.old}
-                  newValue={diffView.new}
-                  splitView
-                  useDarkTheme={isDark()}
-                  leftTitle={new Date(diffView.oldMeta.timestamp).toLocaleString()}
-                  rightTitle={new Date(diffView.newMeta.timestamp).toLocaleString()}
-                />
-              </div>
+              <DiffPane
+                label={`${diffView.oldMeta?.username} to ${diffView.newMeta?.username}`}
+                oldValue={diffView.old}
+                newValue={diffView.new}
+                leftTitle={new Date(diffView.oldMeta.timestamp).toLocaleString()}
+                rightTitle={new Date(diffView.newMeta.timestamp).toLocaleString()}
+                onClose={() => setDiffView(null)}
+              />
             ) : compareDiff ? (
-              <div className="code-panel__diff">
-                <div className="code-panel__diff-head">
-                  <span className="mono">{compareDiff.oldBranch} to {compareDiff.newBranch}</span>
-                  <button className="btn btn--quiet btn--sm" onClick={() => setCompareDiff(null)}>Close</button>
-                </div>
-                <DiffViewer
-                  oldValue={compareDiff.oldContent}
-                  newValue={compareDiff.newContent}
-                  splitView
-                  useDarkTheme={isDark()}
-                  leftTitle={compareDiff.oldBranch}
-                  rightTitle={compareDiff.newBranch}
-                />
-              </div>
+              <DiffPane
+                label={`${compareDiff.oldBranch} to ${compareDiff.newBranch}`}
+                oldValue={compareDiff.oldContent}
+                newValue={compareDiff.newContent}
+                leftTitle={compareDiff.oldBranch}
+                rightTitle={compareDiff.newBranch}
+                onClose={() => setCompareDiff(null)}
+              />
             ) : (
               <MonacoEditor
                 height="100%"
@@ -663,56 +600,23 @@ const CodeEditorPanel = ({ open, onClose, language, setLanguage, value, onChange
             )}
           </div>
 
-          {comments.length > 0 && (
-            <aside className="code-panel__comments">
-              <div className="code-panel__history-head">Comments</div>
-              {comments.map((c) => (
-                <div className="code-panel__comment" key={c._id}>
-                  <div className="code-panel__version-top">
-                    <span>{c.username}</span>
-                    <span className="list-row__meta">
-                      L{c.position.startLine}
-                      {c.position.endLine && c.position.endLine !== c.position.startLine
-                        ? `-${c.position.endLine}` : ""}
-                    </span>
-                  </div>
-                  <div>{c.text}</div>
-                  <div className="list-row__meta">{new Date(c.timestamp).toLocaleString()}</div>
-                  {c.userId === (user?._id || "anonymous") && (
-                    <button className="btn btn--ghost btn--sm" onClick={() => handleDeleteComment(c._id)}>
-                      Delete
-                    </button>
-                  )}
-                </div>
-              ))}
-            </aside>
-          )}
+          <CommentList
+            comments={comments}
+            currentUserId={user?._id || "anonymous"}
+            onDelete={handleDeleteComment}
+          />
         </div>
 
-        {showCommentBox && commentPos && (
-          <div className="code-panel__comment-box">
-            <div className="subtle">
-              Comment on lines {commentPos.startLine}
-              {commentPos.endLine && commentPos.endLine !== commentPos.startLine
-                ? `-${commentPos.endLine}` : ""}
-            </div>
-            <textarea
-              className="field code-panel__comment-input"
-              value={commentInput}
-              onChange={(e) => setCommentInput(e.target.value)}
-              rows={3}
-              autoFocus
-            />
-            <div className="code-panel__comment-actions">
-              <button className="btn btn--quiet btn--sm" onClick={() => setShowCommentBox(false)}>
-                Cancel
-              </button>
-              <button className="btn btn--primary btn--sm" onClick={handleAddComment}>
-                Comment
-              </button>
-            </div>
-          </div>
-        )}
+        <CommentComposer
+          position={commentPos}
+          value={commentInput}
+          onChange={setCommentInput}
+          onSubmit={handleAddComment}
+          onCancel={() => {
+            setCommentPos(null);
+            setCommentInput("");
+          }}
+        />
       </div>
     </Rnd>
   );

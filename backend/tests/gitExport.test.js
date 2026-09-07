@@ -1,5 +1,5 @@
 /**
- * FEAT-006 acceptance test — the exported history is a real git repository.
+ * FEAT-006 acceptance test: the exported history is a real git repository.
  *
  * This does not check the stream's text. It runs `git fast-import` against it
  * in a scratch repo and then interrogates the result with git itself. A format

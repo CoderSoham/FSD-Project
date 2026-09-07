@@ -1,5 +1,5 @@
 /**
- * FEAT-002 acceptance test — three-way merge and the version DAG walk.
+ * FEAT-002 acceptance test: three-way merge and the version DAG walk.
  *
  * The regression this guards against: the previous mergeBranches copied the
  * source branch's content into the target verbatim, so every edit made on the

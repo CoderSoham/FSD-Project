@@ -1,0 +1,81 @@
+/* Pieces shared by the code editor and the prose editor.
+
+   Both panels show version history, both can show a diff, and both used to
+   style those from scratch inside their own stylesheet. The two had already
+   drifted apart by the time this was written. */
+
+.version-list__head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-subtle);
+}
+
+.version-list__item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* The version being edited gets a marker on its leading edge rather than a
+   heavy fill, so the list still reads as one list. */
+.version-list__item--current {
+  box-shadow: inset 2px 0 0 var(--accent);
+  background: var(--accent-quiet);
+}
+
+.version-list__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  width: 100%;
+  font-weight: var(--weight-medium);
+  color: var(--text);
+}
+
+/* The compact variant, used along the bottom of the prose panel where there is
+   width to spare and no height. */
+.version-list--rows .version-list__head {
+  position: static;
+  padding: 0 0 var(--space-2);
+  border-bottom: 0;
+  background: transparent;
+}
+
+.version-list__actions {
+  display: flex;
+  gap: var(--space-1);
+  flex: none;
+}
+
+.diff-pane {
+  height: 100%;
+  overflow: auto;
+  background: var(--surface-raised);
+}
+
+.diff-pane__head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}

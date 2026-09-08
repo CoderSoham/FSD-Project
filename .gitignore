@@ -2,7 +2,7 @@
 node_modules/
 */node_modules/
 
-# environment — never commit real credentials
+# environment. Never commit real credentials.
 .env
 .env.*
 !.env.example
@@ -24,14 +24,9 @@ npm-debug.log*
 .vscode/
 .idea/
 
-# user-uploaded files — research documents must never land in git
+# user-uploaded files. Research documents must never land in git.
 backend/uploads/
 uploads/
-
-# Local assistant configuration. Machine specific and not part of the project.
-CLAUDE.md
-.mcp.json
-.claude/
 
 # Playwright
 node_modules/

@@ -61,7 +61,7 @@ module.exports = defineConfig({
       cwd: "./frontend",
       url: "http://localhost:3000",
       reuseExistingServer: true,
-      timeout: 240_000,
+      timeout: 420_000,  // a cold CRA compile on a loaded machine can exceed four minutes
       env: { BROWSER: "none", NODE_OPTIONS: "--openssl-legacy-provider" },
     },
   ],

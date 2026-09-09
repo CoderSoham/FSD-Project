@@ -4,6 +4,7 @@ import { getRoomMessages, postRoomMessage, downloadRoomFile } from '../../api';
 import { notifyError, notifySuccess } from '../../shared/utils/notification';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import Message from "../Messenger/Messages/Message";
+import { API_ORIGIN } from "../../config";
 
 const Panel = styled("div")(({ open }) => ({
   width: open ? 260 : 0,
@@ -79,7 +80,7 @@ const ProgressFill = styled("div")(({ percent }) => ({
   transition: "width 0.2s"
 }));
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5002';
+const BACKEND_URL = API_ORIGIN;
 
 const RoomChatPanel = ({ open, setOpen }) => {
   const [messages, setMessages] = useState([]);

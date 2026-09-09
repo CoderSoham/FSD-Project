@@ -1,6 +1,7 @@
 const express = require("express");
 const http = require("http");
 const cors = require("cors");
+const { corsOptions } = require("./config/origins");
 const mongoose = require("mongoose");
 require("dotenv").config();
 
@@ -18,10 +19,7 @@ const PORT = process.env.PORT || process.env.API_PORT || 5002;
 const app = express();
 // Used to build absolute citation URLs; a citation with a localhost link is useless.
 app.set("publicBaseUrl", process.env.PUBLIC_BASE_URL || "https://fsd-project-mu.vercel.app");
-app.use(cors({
-  origin: 'http://localhost:3000',
-  credentials: true, 
-}));
+app.use(cors(corsOptions));
 
 // Documents travel in the body, so the default 100kb is too small, but it
 // still needs a ceiling. Anything over this returns a sentence, not a stack.

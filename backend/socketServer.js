@@ -11,13 +11,14 @@ const roomSignalingDataHandler = require("./socketHandlers/roomSignalingDataHand
 const codeCollabHandler = require("./socketHandlers/codeCollabHandler");
 
 const serverStore = require("./serverStore");
+const { corsOptions } = require("./config/origins");
 
 const registerSocketServer = (server) => {
+  // Same allowlist the REST side uses. This was "*", which is not the security
+  // boundary here (the handshake carries a JWT) but there is no reason to let
+  // any page on the internet open a socket to this server.
   const io = require("socket.io")(server, {
-    cors: {
-      origin: "*",
-      methods: ["GET", "POST"],
-    },
+    cors: { ...corsOptions, methods: ["GET", "POST"] },
   });
 
   serverStore.setSocketServerInstance(io);

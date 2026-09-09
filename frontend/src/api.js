@@ -1,10 +1,9 @@
 import axios from "axios";
 import { logout } from "./shared/utils/auth";
+import { API_BASE } from "./config";
 
 const apiClient = axios.create({
-  baseURL: process.env.NODE_ENV === 'production' 
-    ? "https://fsd-project-api.vercel.app/api"  
-    : "http://localhost:5002/api",              
+  baseURL: API_BASE,
   timeout: 10000,
 });
 
@@ -259,11 +258,8 @@ export const getCitation = async (versionId) => {
  * following a citation who has no account at all.
  */
 export const getPublicVersion = async (versionId) => {
-  const base = process.env.NODE_ENV === "production"
-    ? "https://fsd-project-api.vercel.app/api"
-    : "http://localhost:5002/api";
   try {
-    const res = await fetch(`${base}/public/versions/${versionId}`);
+    const res = await fetch(`${API_BASE}/public/versions/${versionId}`);
     if (!res.ok) return { error: "not-available" };
     return await res.json();
   } catch {

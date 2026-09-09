@@ -1,0 +1,46 @@
+# Deploys the API as a normal long-running Node service.
+#
+# The realtime half of this product is socket.io: presence, direct messages,
+# rooms, WebRTC signalling and the CRDT relay. All of it needs a process that
+# stays alive between requests, which a serverless function is not. That is the
+# whole reason this file exists.
+#
+# To use it: on Render, New > Blueprint, point it at this repository. Render
+# reads this file and creates the service. Then set the two secret values it
+# asks for, listed as sync:false below.
+
+services:
+  - type: web
+    name: gitcord-api
+    runtime: node
+    plan: free
+    rootDir: backend
+
+    # Omit devDependencies. mongodb-memory-server lives there and downloads a
+    # MongoDB binary on install, which is wanted for tests and pointless here.
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+
+    # Liveness, not readiness. /healthz reports the database and returns 503
+    # when it is unreachable; a health check following that would restart the
+    # service in a loop exactly when it is trying to tell you what is wrong.
+    healthCheckPath: /livez
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      # Render provides PORT. server.js reads it.
+
+      # Both are secrets and are set in the dashboard, not here.
+      - key: MONGO_URI
+        sync: false
+      - key: TOKEN_KEY
+        sync: false
+
+      # The frontend's origin. Used for CORS and to build citation links, which
+      # point at the frontend rather than at this API.
+      - key: PUBLIC_BASE_URL
+        value: https://fsd-project-mu.vercel.app
+      - key: CORS_ORIGINS
+        value: https://fsd-project-mu.vercel.app,http://localhost:3000

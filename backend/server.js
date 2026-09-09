@@ -29,7 +29,17 @@ app.get('/', (req, res) => {
   res.send('Server is running!');
 });
 
-// Says what is actually wrong rather than just 'ok'.
+/**
+ * Liveness. Is this process running and serving?
+ *
+ * Deliberately says nothing about the database. Platform health checks restart
+ * anything that fails them, and pointing one at /healthz would mean a paused
+ * database turns into a restart loop, taking down the routes that still work
+ * and hiding the real reason. Point the host's health check here.
+ */
+app.get('/livez', (req, res) => res.status(200).json({ status: 'ok' }));
+
+// Readiness. Says what is actually wrong rather than just 'ok'.
 app.get('/healthz', (req, res) => {
   const states = ['disconnected', 'connected', 'connecting', 'disconnecting'];
   const db = states[mongoose.connection.readyState] || 'unknown';
@@ -87,8 +97,19 @@ const connectToDatabase = async () => {
   }
 };
 
-server.listen(PORT, '127.0.0.1', () => {
-  console.log(`Server is listening on ${PORT}`);
+/**
+ * Bind every interface by default.
+ *
+ * This was pinned to 127.0.0.1, which is fine on a laptop and fatal in a
+ * container: the platform's router sits outside the container's loopback, so a
+ * service bound there accepts nothing and the deploy is marked unhealthy.
+ * Set HOST to override, for example HOST=127.0.0.1 to keep it off the LAN
+ * while developing.
+ */
+const HOST = process.env.HOST || '0.0.0.0';
+
+server.listen(PORT, HOST, () => {
+  console.log(`Server is listening on ${HOST}:${PORT}`);
 });
 connectToDatabase();
 

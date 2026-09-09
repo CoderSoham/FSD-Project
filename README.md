@@ -134,7 +134,10 @@ y-monaco and y-prosemirror.
 **Backend.** Node, Express 4, Socket.IO 4, Mongoose 6, bcryptjs, jsonwebtoken,
 Joi through express-joi-validation, node-diff3, Yjs.
 
-**Data.** MongoDB. **Hosting.** Vercel, frontend and API deployed separately.
+**Data.** MongoDB. **Hosting.** The frontend is static and goes on any CDN.
+The API is a long-running Node service, because socket.io needs a process that
+outlives a request. [render.yaml](render.yaml) describes it, and
+[backend/Dockerfile](backend/Dockerfile) covers any container host.
 
 ## Running it
 
@@ -177,12 +180,14 @@ Everything is discarded when you stop it, which is the point.
 cd backend && npm install && cp .env.example .env
 ```
 
-Fill in `.env`. See [backend/.env.example](backend/.env.example) for the three
-keys, and generate the JWT secret with `openssl rand -base64 48`. Then
-`npm start`.
+Fill in `.env`. See [backend/.env.example](backend/.env.example) for the keys,
+and generate the JWT secret with `openssl rand -base64 48`. Then `npm start`,
+or `npm run dev:watch` to restart on save.
 
 If the API starts but every request comes back 503, the database is unreachable.
-`GET /healthz` says which of the two is unhappy.
+`GET /healthz` says which of the two is unhappy. `GET /livez` answers whenever
+the process is up, regardless of the database, and is what a host's health check
+should point at.
 
 ### The frontend
 
@@ -192,7 +197,9 @@ In a second terminal:
 cd frontend && npm install && npm start
 ```
 
-It opens on port 3000 and talks to the API on 5002.
+It opens on port 3000 and talks to the API on 5002. Set
+`REACT_APP_API_ORIGIN` to point it somewhere else; see
+[frontend/.env.example](frontend/.env.example).
 
 ## Tests
 
